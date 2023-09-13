@@ -16,6 +16,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { store } from "./src/redux/store";
 import { Provider } from "react-redux";
 
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 

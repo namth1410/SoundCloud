@@ -1,8 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-import top100Reducer from "./top100Slice";
+import userReducer from "./userSlice";
+import songReducer from "./songSlice";
+import playSongReducer from "./playSongSlice";
 
 export const store = configureStore({
   reducer: {
-    top100: top100Reducer,
+    userInfo: userReducer,
+    allSong: songReducer,
+    playSong: playSongReducer,
   },
 });

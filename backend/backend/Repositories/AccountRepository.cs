@@ -25,7 +25,7 @@ namespace backend.Repositories
 
         public async Task<string> SignInAsync(SignInModel model)
         {
-            var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+            var result = await signInManager.PasswordSignInAsync(model.Username, model.Password, false, false);
 
             if (!result.Succeeded)
             {
@@ -34,7 +34,7 @@ namespace backend.Repositories
 
             var authClaims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email, model.Email),
+                new Claim(ClaimTypes.Email, model.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -55,8 +55,8 @@ namespace backend.Repositories
         {
             var user = new IdentityUser
             {
-                Email = model.Email,
-                UserName = model.Email
+                Email = model.Username,
+                UserName = model.Username
             };
 
             return await userManager.CreateAsync(user, model.Password);

@@ -15,9 +15,7 @@ namespace backend.Data
         public string NameAuthor { get; set; }
         [Required]
         public string LinkSong { get; set; }
-        [Required]
-        public string View { get; set; }
-        [Required]
-        public string Likes { get; set; }
+        public string? Lyric { get; set; }
+        public string? Img { get; set; }
     }
 }

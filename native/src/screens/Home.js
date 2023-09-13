@@ -13,17 +13,52 @@ import {
   ScrollView,
 } from "react-native";
 import React, { useEffect } from "react";
-import Card from "../components/Card";
+import Card from "../components/CardSong";
 import PlayList from "../components/PlayList";
 import { useSelector, useDispatch } from "react-redux";
-import { top100 } from "../redux/top100Slice";
+import { updateTop100 } from "../redux/userSlice";
+import { Audio } from "expo-av";
+import { storage } from "../api/firebase";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  listAll,
+  list,
+  uploadBytesResumable,
+} from "firebase/storage";
 
 export default function Home({ navigation }) {
-  const count = useSelector((state) => state.top100);
+  const allSong = useSelector((state) => state.allSong);
   const dispatch = useDispatch();
 
+  async function testUpFileMP3() {
+    const uri =
+      "https://firebasestorage.googleapis.com/v0/b/soundcloud-398901.appspot.com/o/songs%2FC%C3%A1nh%20Thi%E1%BB%87p%20%C4%90%E1%BA%A7u%20Xu%C3%A2n%20%20Ph%C6%B0%C6%A1ng%20Anh%20Official%20MV.mp3?alt=media&token=b8be753b-ab5b-47af-a585-2fed91829ed2";
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const storageRef = ref(storage, "Stuff/" + new Date().getTime());
+    const uploadTask = uploadBytesResumable(storageRef, blob, {
+      contentType: "audio/mpeg",
+    });
+
+    // listen for events
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {},
+      (error) => {
+        // handle error
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+          console.log("File available at", downloadURL);
+        });
+      }
+    );
+  }
   useEffect(() => {
-    console.log(count);
+    console.log(allSong);
   }, []);
 
   return (
@@ -35,7 +70,11 @@ export default function Home({ navigation }) {
         }}
       >
         <StatusBar translucent={false}></StatusBar>
-        <TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            dispatch(updateTop100(""));
+          }}
+        >
           <Text
             style={{
               fontWeight: "bold",
@@ -46,13 +85,13 @@ export default function Home({ navigation }) {
               paddingBottom: 12,
             }}
           >
-            Home
+            {`Home`}
           </Text>
         </TouchableOpacity>
 
         <ScrollView>
           <PlayList
-            props={{ title: "Nghe gần đây", playList: [1, 2, 3] }}
+            props={{ title: "Nghe gần đây", playList: allSong.songs, label: "" }}
           ></PlayList>
           <PlayList
             props={{ title: "Thịnh hành", playList: [1, 2, 3] }}
