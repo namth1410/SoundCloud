@@ -12,11 +12,11 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
-import Card from "./Card";
+import Card from "./CardSong";
 import React, { useEffect } from "react";
 
 export default function PlayList({ props }) {
-  const { title, playList } = props;
+  const { title, playList, label } = props;
 
   return (
     <View>
@@ -46,11 +46,13 @@ export default function PlayList({ props }) {
           {playList.map((item, index) => (
             <Card
               key={index}
-              props={{
-                src: require("../../assets/test.jpg"),
-                name: "Việt Mix 2018-2019",
-                label: "New Release",
-              }}
+              // props={{
+              //   img: require("../../assets/musique.jpg"),
+              //   nameSong: item.nameSong,
+              //   nameAuthor: item.nameAuthor,
+              //   linkSong: item.linkSong,
+              // }}
+              props={item}
             ></Card>
           ))}
         </View>

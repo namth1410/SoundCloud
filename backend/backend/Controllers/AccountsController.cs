@@ -23,6 +23,8 @@ namespace backend.Controllers
         [HttpPost("SignUp")]
         public async Task<IActionResult> SignUp(SignUpModel signUpModel)
         {
+            Console.WriteLine(signUpModel);
+
             var result = await accountRepo.SignUpAsync(signUpModel);
             if (result.Succeeded)
             {
@@ -30,10 +32,16 @@ namespace backend.Controllers
             }
             foreach (var error in result.Errors)
             {
+                Console.WriteLine("log ra nay");
                 Console.WriteLine($"Error: {error.Code}, {error.Description}");
             }
 
-            return Unauthorized();
+            Console.WriteLine(result);
+            Console.WriteLine("log ra nay");
+            var errors = result.Errors.Select(error => new { Code = error.Code, Description = error.Description });
+            return BadRequest(errors);
+
+            // return Unauthorized(result);
         }
 
         [HttpPost("SignIn")]
