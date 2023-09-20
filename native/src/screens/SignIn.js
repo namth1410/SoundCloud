@@ -50,9 +50,7 @@ export default function SignIn({ navigation }) {
   const handleSignInWithoutAccount = () => {
     try {
       Keyboard.dismiss();
-      dispatch(getAllSong()).then(
-        () => {}
-      );
+      dispatch(getAllSong());
     } catch (error) {
       console.log(error);
     }

@@ -1,8 +1,7 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import Song from "../model/Song";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-const baseUrl =
-  "https://a6d6-2402-800-62d0-3c4c-e97a-471f-1ad4-78ab.ngrok-free.app";
+import { BASE_URL } from "./configAPI";
+
 
 const initialState = {
   songs: [],
@@ -12,21 +11,10 @@ const initialState = {
   success: false,
 };
 
-export const userSlice = createSlice({
+export const songSlice = createSlice({
   name: "song",
   initialState,
-  reducers: {
-    updateTop100: (state, action) => {
-      return {};
-      // state.push(action.payload);
-    },
-    signIn: (state, action) => {
-      return {
-        username: action.payload.username,
-        token: action.payload.token,
-      };
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(getAllSong.pending, (state, action) => {
@@ -49,7 +37,7 @@ export const userSlice = createSlice({
 
 export const getAllSong = createAsyncThunk("song/getAllSong", async () => {
   try {
-    const response = await axios.get(`${baseUrl}/api/Songs`);
+    const response = await axios.get(`${BASE_URL}/api/Songs`);
     return response.data;
   } catch (error) {
     console.error("Lỗi rồi: ", error);
@@ -57,18 +45,6 @@ export const getAllSong = createAsyncThunk("song/getAllSong", async () => {
   }
 });
 
-export const signUp = createAsyncThunk("user/signUp", async (infoSignUp) => {
-  try {
-    const response = await axios.post(
-      `${baseUrl}/api/Accounts/SignUp`,
-      infoSignUp
-    );
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response.data.errors);
-  }
-});
+export const {} = songSlice.actions;
 
-export const { updateTop100, signIn } = userSlice.actions;
-
-export default userSlice.reducer;
+export default songSlice.reducer;

@@ -1,54 +1,78 @@
-import { StatusBar } from "expo-status-bar";
-import { Image, SafeAreaView, StyleSheet, Text, View } from "react-native";
-import React, { useEffect } from "react";
-import axios from "axios";
-import SignIn from "./src/screens/SignIn";
-import SignUp from "./src/screens/SignUp";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Home from "./src/screens/Home";
-import Feed from "./src/screens/Feed";
-import Search from "./src/screens/Search";
-import Library from "./src/screens/Library";
-import Icon from "react-native-vector-icons/FontAwesome";
+import React, { useEffect } from "react";
+import { SafeAreaView, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { Provider, useSelector } from "react-redux";
+import ControlSong from "./src/components/ControlSong";
 import { store } from "./src/redux/store";
-import { Provider } from "react-redux";
-
+import Feed from "./src/screens/Feed";
+import Home from "./src/screens/Home";
+import Library from "./src/screens/Library";
+import Search from "./src/screens/Search";
+import SignIn from "./src/screens/SignIn";
+import SignUp from "./src/screens/SignUp";
+import DetailSong from "./src/screens/DetailSong";
+import ModalSong from "./src/components/ModalSong";
+import Song from "./src/components/Song";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function SoundCloudTabs() {
+function TabStack(component, name) {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-
-          if (route.name === "Home") {
-            iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "Feed") {
-            iconName = focused ? "ios-list" : "ios-list-outline";
-          } else if (route.name === "Search") {
-            iconName = focused ? "search" : "search-outline";
-          } else if (route.name === "Library") {
-            iconName = focused ? "library" : "library-outline";
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: "tomato",
-        tabBarInactiveTintColor: "gray",
-        headerShown: false,
-      })}
+    <Stack.Navigator
+      initialRouteName={name}
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Home" component={Home} />
-      <Tab.Screen name="Feed" component={Feed} />
-      <Tab.Screen name="Search" component={Search} />
-      <Tab.Screen name="Library" component={Library} />
-    </Tab.Navigator>
+      <Stack.Screen name={name} component={component} />
+      {/* Thêm các màn hình khác của tab Home vào đây nếu cần */}
+    </Stack.Navigator>
+  );
+}
+
+function SoundCloudTabs() {
+  const playSongStore = useSelector((state) => state.playSong);
+  const modal = useSelector((state) => state.modal);
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+
+            if (route.name === "Home") {
+              iconName = focused ? "home" : "home-outline";
+            } else if (route.name === "Feed") {
+              iconName = focused ? "ios-list" : "ios-list-outline";
+            } else if (route.name === "Search") {
+              iconName = focused ? "search" : "search-outline";
+            } else if (route.name === "Library") {
+              iconName = focused ? "library" : "library-outline";
+            }
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: "tomato",
+          tabBarInactiveTintColor: "gray",
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen name="Home" component={Home} />
+        <Tab.Screen name="Feed" component={Feed} />
+        <Tab.Screen name="Search" component={Search} />
+        <Tab.Screen name="Library" component={Library} />
+        <Tab.Screen name="DetailSong" component={DetailSong} />
+      </Tab.Navigator>
+      <Song></Song>
+      {playSongStore.nameSong && !modal.display ? (
+        <ControlSong></ControlSong>
+      ) : (
+        <></>
+      )}
+      {/* {false ? <ControlSong></ControlSong> : <></>} */}
+    </SafeAreaView>
   );
 }
 
@@ -66,19 +90,6 @@ export default function App() {
       height: 58,
     },
   });
-
-  // useEffect(() => {
-  //   axios
-  //     .get("https://840a-27-72-147-73.ngrok-free.app/api/Songs/1")
-  //     .then((response) => {
-  //       // Xử lý dữ liệu từ response.data
-  //       console.log(response.data);
-  //     })
-  //     .catch((error) => {
-  //       // Xử lý lỗi
-  //       console.error("Error:", error);
-  //     });
-  // }, []);
 
   return (
     <Provider store={store}>

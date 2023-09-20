@@ -1,36 +1,41 @@
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-} from "react-native";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import React, { useEffect } from "react";
-import Card from "../components/CardSong";
-import PlayList from "../components/PlayList";
-import { useSelector, useDispatch } from "react-redux";
-import { updateTop100 } from "../redux/userSlice";
-import { Audio } from "expo-av";
-import { storage } from "../api/firebase";
 import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  listAll,
-  list,
-  uploadBytesResumable,
-} from "firebase/storage";
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { storage } from "../api/firebase";
+import PlayList from "../components/PlayList";
 
 export default function Home({ navigation }) {
   const allSong = useSelector((state) => state.allSong);
+  const playSongStore = useSelector((state) => state.playSong);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (playSongStore.playinng) {
+      // MusicControl.setNowPlaying({
+      //   title: "Billie Jean",
+      //   artwork: "https://i.imgur.com/e1cpwdo.png", // URL or RN's image require()
+      //   artist: "Michael Jackson",
+      //   album: "Thriller",
+      //   genre: "Post-disco, Rhythm and Blues, Funk, Dance-pop",
+      //   duration: 294, // (Seconds)
+      //   description: "", // Android Only
+      //   color: 0xffffff, // Android Only - Notification Color
+      //   colorized: true, // Android 8+ Only - Notification Color extracted from the artwork. Set to false to use the color property instead
+      //   date: "1983-01-02T00:00:00Z", // Release Date (RFC 3339) - Android Only
+      //   rating: 84, // Android Only (Boolean or Number depending on the type)
+      //   notificationIcon: "my_custom_icon", // Android Only (String), Android Drawable resource name for a custom notification icon
+      // });
+      // MusicControl.enableControl("play", true);
+    }
+  }, [playSongStore]);
 
   async function testUpFileMP3() {
     const uri =
@@ -57,9 +62,6 @@ export default function Home({ navigation }) {
       }
     );
   }
-  useEffect(() => {
-    console.log(allSong);
-  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -70,11 +72,7 @@ export default function Home({ navigation }) {
         }}
       >
         <StatusBar translucent={false}></StatusBar>
-        <TouchableOpacity
-          onPress={() => {
-            dispatch(updateTop100(""));
-          }}
-        >
+        <TouchableOpacity onPress={() => {}}>
           <Text
             style={{
               fontWeight: "bold",
@@ -91,7 +89,11 @@ export default function Home({ navigation }) {
 
         <ScrollView>
           <PlayList
-            props={{ title: "Nghe gần đây", playList: allSong.songs, label: "" }}
+            props={{
+              title: "Nghe gần đây",
+              playList: allSong.songs,
+              label: "",
+            }}
           ></PlayList>
           <PlayList
             props={{ title: "Thịnh hành", playList: [1, 2, 3] }}
@@ -101,6 +103,7 @@ export default function Home({ navigation }) {
           ></PlayList>
         </ScrollView>
       </View>
+      {/* {playSongStore.nameSong ? <ControlSong></ControlSong> : <></>} */}
     </SafeAreaView>
   );
 }
