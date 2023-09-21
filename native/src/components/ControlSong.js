@@ -12,39 +12,24 @@ import { useDispatch, useSelector } from "react-redux";
 import { continuePlaySound, pauseSound, playSound } from "../common/appSong";
 import { TYPE_ACTION } from "../common/typeAction";
 import { continuePlaySong, pauseSong } from "../redux/playSongSlice";
+import { showModal } from "../redux/modalSlice";
 
 export default function ControlSong() {
   const playSongStore = useSelector((state) => state.playSong);
   const dispatch = useDispatch();
   const pauseAction = () => {
     if (playSongStore.playing) {
-      console.log("Chui vao if");
       dispatch(pauseSong());
-      // pauseSound();
     } else {
-      console.log("Chui vao else");
-
       dispatch(continuePlaySong());
-      // continuePlaySound();
     }
   };
 
+  const clickControlSong = () => {
+    dispatch(showModal());
+  };
+
   const spinValue = new Animated.Value(0);
-
-  useEffect(() => {}, []);
-
-  // useEffect(() => {
-  //   if (playSongStore.playing) {
-  //     spin();
-  //     if (playSongStore.typeAction === TYPE_ACTION.CHANGE) {
-  //       playSound({ uri: playSongStore.linkSong });
-  //     } else if (playSongStore.typeAction === TYPE_ACTION.CONTINUE) {
-  //       continuePlaySound();
-  //     }
-  //   } else {
-  //     pauseSound();
-  //   }
-  // }, [playSongStore]);
 
   const spin = () => {
     spinValue.setValue(0);
@@ -62,32 +47,37 @@ export default function ControlSong() {
   return (
     <View style={styles.box}>
       <View style={styles.container}>
-        <Animated.Image
-          source={{
-            uri: "http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg",
-          }}
-          style={{
-            ...styles.albumCover,
-            transform: [{ rotate: spinAnimation }],
-          }}
-        ></Animated.Image>
-        <View style={styles.infoSongBox}>
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.nameSong}>
-            {playSongStore.nameSong}
-          </Text>
-          <Text
-            numberOfLines={1}
-            ellipsizeMode="tail"
-            style={styles.authorSong}
-          >
-            {playSongStore.nameAuthor}
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={{...styles.container}}
+          onPress={clickControlSong}
+        >
+          <Animated.Image
+            source={{
+              uri: "http://www.archive.org/download/LibrivoxCdCoverArt8/hamlet_1104.jpg",
+            }}
+            style={{
+              ...styles.albumCover,
+              transform: [{ rotate: spinAnimation }],
+            }}
+          ></Animated.Image>
+          <View style={styles.infoSongBox}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={styles.nameSong}
+            >
+              {playSongStore.nameSong}
+            </Text>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={styles.authorSong}
+            >
+              {playSongStore.nameAuthor}
+            </Text>
+          </View>
+        </TouchableOpacity>
         <View style={styles.controls}>
-          {/* <TouchableOpacity style={styles.control} onPress={() => alert("")}>
-            <Ionicons name="play-skip-back-outline" size={48} color="#444" />
-          </TouchableOpacity> */}
-
           <View
             style={{
               flexDirection: "row",
@@ -155,8 +145,8 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
   controls: {
-    flex: 1,
     justifyContent: "flex-end",
+    marginRight: 10
   },
 
   control: {

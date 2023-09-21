@@ -15,23 +15,19 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import Slider from "@react-native-community/slider";
 import { hideModal } from "../redux/modalSlice";
 import { continuePlaySong, pauseSong } from "../redux/playSongSlice";
-import appSong from "../common/appSong";
+import { useAudio } from "../common/AudioProvider";
 
 export default function ModalSong() {
   const playSongStore = useSelector((state) => state.playSong);
   const modalStore = useSelector((state) => state.modal);
   const dispatch = useDispatch();
+  const { duration } = useAudio();
   const [sliderValue, setSliderValue] = useState("");
-  const pauseAction = () => {
+  const pausePlayAction = () => {
     if (playSongStore.playing) {
-      console.log("Chui vao if");
       dispatch(pauseSong());
-      // pauseSound();
     } else {
-      console.log("Chui vao else");
-
       dispatch(continuePlaySong());
-      // continuePlaySound();
     }
   };
 
@@ -44,7 +40,7 @@ export default function ModalSong() {
     const remainingSeconds = seconds % 60;
 
     // Định dạng chuỗi thời gian theo định dạng hh:mm:ss
-    const formattedTime = `${hours}:${minutes < 10 ? "0" : ""}${minutes}:${
+    const formattedTime = `${minutes < 10 ? "0" : ""}${minutes}:${
       remainingSeconds < 10 ? "0" : ""
     }${remainingSeconds}`;
 
@@ -52,14 +48,11 @@ export default function ModalSong() {
   }
 
   useEffect(() => {
-    const duration = async () => {
-      let stateSong = await appSong.getStatusAsync();
-      console.log(typeof stateSong.durationMillis);
-      console.log(stateSong.durationMillis);
-      setSliderValue(formatMillisecondsToTime(stateSong.durationMillis));
-    };
-    duration();
-  }, [playSongStore.nameSong]);
+    setSliderValue(formatMillisecondsToTime(0));
+  }, []);
+  useEffect(() => {
+    setSliderValue(formatMillisecondsToTime(duration));
+  }, [duration]);
   return (
     <Modal
       animationIn={"slideInUp"}
@@ -144,7 +137,9 @@ export default function ModalSong() {
             }}
           >
             <Text style={[styles.textLight, styles.timeStamp]}>0</Text>
-            <Text style={[styles.textLight, styles.timeStamp]}>{sliderValue}</Text>
+            <Text style={[styles.textLight, styles.timeStamp]}>
+              {sliderValue}
+            </Text>
           </View>
         </View>
 
@@ -165,7 +160,7 @@ export default function ModalSong() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.playButtonContainer}
-            onPress={pauseAction}
+            onPress={pausePlayAction}
           >
             {playSongStore.playing ? (
               <Ionicons name="pause-circle" size={60} color="#3D425C" />

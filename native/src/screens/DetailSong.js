@@ -23,11 +23,9 @@ export default function DetailSong() {
 
   const pauseAction = () => {
     if (playSongStore.playing) {
-      console.log("Chui vao if");
       dispatch(pauseSong());
       // pauseSound();
     } else {
-      console.log("Chui vao else");
 
       dispatch(continuePlaySong());
       // continuePlaySound();

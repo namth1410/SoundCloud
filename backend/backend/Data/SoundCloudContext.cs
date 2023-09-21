@@ -12,6 +12,7 @@ namespace backend.Data
         #region
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Song> Songs { get; set; }
+        public DbSet<SongLike> SongLike { get; set; }
         #endregion
     }
 }

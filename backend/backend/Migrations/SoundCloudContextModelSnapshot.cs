@@ -245,7 +245,6 @@ namespace backend.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Img")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("LinkSong")
@@ -253,7 +252,6 @@ namespace backend.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Lyric")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("NameAuthor")
@@ -267,6 +265,23 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Song");
+                });
+
+            modelBuilder.Entity("backend.Data.SongLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdSong")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdUser")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SongLike");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -1,5 +1,7 @@
 ﻿using backend.Data;
+using backend.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +12,42 @@ namespace backend.Controllers
     public class SongsController : ControllerBase
     {
         private readonly SoundCloudContext _context;
-
-        public SongsController(SoundCloudContext context)
+        private readonly ISongLikeRepository _songLikeRepository;
+        private readonly UserManager<IdentityUser> _userManager;
+        public SongsController(SoundCloudContext context, ISongLikeRepository songLikeRepository, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _songLikeRepository = songLikeRepository;
+            _userManager = userManager;
+        }
+
+        // GET: api/Songs
+        [Authorize]
+        [HttpGet("getSongLike")]
+
+        public async Task<ActionResult<IEnumerable<Song>>> GetSongsLike()
+        {
+            if (_context.SongLike == null)
+            {
+                return NotFound();
+            }
+            return await _songLikeRepository.getSongLikeList(1);
+        }
+
+        //[Authorize]
+        [HttpPost("addSongLike")]
+        public async Task<ActionResult> PostSongLike()
+        {
+            if (_context.SongLike == null)
+            {
+                return Problem("Entity set 'SoundCloudContext.Songs'  is null.");
+            }
+            var user = await _userManager.GetUserAsync(User);
+            //var idUser = user.Id;
+            //_context.SongLike.Add(song);
+            //await _context.SaveChangesAsync();
+
+            return Ok("a");
         }
 
         // GET: api/Songs
@@ -28,7 +62,7 @@ namespace backend.Controllers
         }
 
         // GET: api/Songs/5
-        [Authorize]
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetSong(int id)
         {

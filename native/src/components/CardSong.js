@@ -1,21 +1,19 @@
 import React, { useEffect } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { cancelSound, playSound } from "../common/appSong";
-import { changePlaySong, playSong } from "../redux/playSongSlice";
-import { TYPE_ACTION } from "../common/typeAction";
-import { useNavigation } from "@react-navigation/native";
 import ModalSong from "./ModalSong";
+import { useAudio } from "../common/AudioProvider";
+import { playSong } from "../redux/playSongSlice";
+import { TYPE_ACTION } from "../common/typeAction";
 import { showModal } from "../redux/modalSlice";
-
 export default function Card({ props }) {
   const { img, nameSong, nameAuthor, linkSong } = props;
   const playSongStore = useSelector((state) => state.playSong);
   const dispatch = useDispatch();
+  const { test, playSound } = useAudio();
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.nameSong) {
-      console.log("Thay doi bai hat");
-      console.log(nameSong);
+      console.log("play");
       dispatch(
         playSong({
           img: "",
@@ -27,6 +25,7 @@ export default function Card({ props }) {
       );
       dispatch(showModal());
     } else {
+      dispatch(showModal());
     }
   };
 

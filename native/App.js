@@ -16,6 +16,7 @@ import SignUp from "./src/screens/SignUp";
 import DetailSong from "./src/screens/DetailSong";
 import ModalSong from "./src/components/ModalSong";
 import Song from "./src/components/Song";
+import { AudioProvider } from "./src/common/AudioProvider";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,43 +37,45 @@ function SoundCloudTabs() {
   const playSongStore = useSelector((state) => state.playSong);
   const modal = useSelector((state) => state.modal);
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
+    <AudioProvider>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            tabBarIcon: ({ focused, color, size }) => {
+              let iconName;
 
-            if (route.name === "Home") {
-              iconName = focused ? "home" : "home-outline";
-            } else if (route.name === "Feed") {
-              iconName = focused ? "ios-list" : "ios-list-outline";
-            } else if (route.name === "Search") {
-              iconName = focused ? "search" : "search-outline";
-            } else if (route.name === "Library") {
-              iconName = focused ? "library" : "library-outline";
-            }
+              if (route.name === "Home") {
+                iconName = focused ? "home" : "home-outline";
+              } else if (route.name === "Feed") {
+                iconName = focused ? "ios-list" : "ios-list-outline";
+              } else if (route.name === "Search") {
+                iconName = focused ? "search" : "search-outline";
+              } else if (route.name === "Library") {
+                iconName = focused ? "library" : "library-outline";
+              }
 
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: "tomato",
-          tabBarInactiveTintColor: "gray",
-          headerShown: false,
-        })}
-      >
-        <Tab.Screen name="Home" component={Home} />
-        <Tab.Screen name="Feed" component={Feed} />
-        <Tab.Screen name="Search" component={Search} />
-        <Tab.Screen name="Library" component={Library} />
-        <Tab.Screen name="DetailSong" component={DetailSong} />
-      </Tab.Navigator>
-      <Song></Song>
-      {playSongStore.nameSong && !modal.display ? (
-        <ControlSong></ControlSong>
-      ) : (
-        <></>
-      )}
-      {/* {false ? <ControlSong></ControlSong> : <></>} */}
-    </SafeAreaView>
+              return <Ionicons name={iconName} size={size} color={color} />;
+            },
+            tabBarActiveTintColor: "tomato",
+            tabBarInactiveTintColor: "gray",
+            headerShown: false,
+          })}
+        >
+          <Tab.Screen name="Home" component={Home} />
+          <Tab.Screen name="Feed" component={Feed} />
+          <Tab.Screen name="Search" component={Search} />
+          <Tab.Screen name="Library" component={Library} />
+          <Tab.Screen name="DetailSong" component={DetailSong} />
+        </Tab.Navigator>
+        <Song></Song>
+        {playSongStore.nameSong && !modal.display ? (
+          <ControlSong></ControlSong>
+        ) : (
+          <></>
+        )}
+        {/* {false ? <ControlSong></ControlSong> : <></>} */}
+      </SafeAreaView>
+    </AudioProvider>
   );
 }
 

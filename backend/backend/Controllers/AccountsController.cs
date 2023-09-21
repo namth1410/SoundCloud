@@ -57,7 +57,7 @@ namespace backend.Controllers
             return Ok(result);
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("Get")]
         public async Task<IActionResult> getAll(string token)
         {
