@@ -1,22 +1,17 @@
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   StyleSheet,
   Text,
-  View,
   TextInput,
-  TouchableHighlight,
-  Button,
   TouchableOpacity,
-  TouchableOpacityBase,
-  Alert,
+  View
 } from "react-native";
-import React, { useEffect, useState } from "react";
 
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import Icon from "react-native-vector-icons/FontAwesome";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { signUp } from "../redux/userSlice";
 
 export default function SignUp({ navigation }) {

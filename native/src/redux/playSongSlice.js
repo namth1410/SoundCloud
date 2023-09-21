@@ -1,10 +1,12 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
+import { TYPE_ACTION } from "../common/typeAction";
 
 const initialState = {
   nameSong: "",
   nameAuthor: "",
   linkSong: "",
   playing: false,
+  typeAction: "",
   loading: false,
   error: "",
   success: false,
@@ -21,11 +23,22 @@ export const playSongSlice = createSlice({
         nameAuthor: action.payload.nameAuthor,
         linkSong: action.payload.linkSong,
         playing: true,
+        typeAction: action.payload.typeAction,
       };
     },
+
     pauseSong: (state, action) => {
       return {
+        ...state,
         playing: false,
+        typeAction: TYPE_ACTION.PAUSE,
+      };
+    },
+    continuePlaySong: (state, action) => {
+      return {
+        ...state,
+        playing: true,
+        typeAction: TYPE_ACTION.CONTINUE,
       };
     },
     cancelSong: (state, action) => {
@@ -36,6 +49,7 @@ export const playSongSlice = createSlice({
   },
 });
 
-export const { playSong, pauseSong, cancelSong } = playSongSlice.actions;
+export const { playSong, pauseSong, continuePlaySong, cancelSong } =
+  playSongSlice.actions;
 
 export default playSongSlice.reducer;

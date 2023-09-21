@@ -1,7 +1,6 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-const baseUrl =
-  "https://a6d6-2402-800-62d0-3c4c-e97a-471f-1ad4-78ab.ngrok-free.app";
+import { BASE_URL } from "./configAPI";
 
 const initialState = {
   username: "",
@@ -14,32 +13,21 @@ const initialState = {
 export const userSlice = createSlice({
   name: "user",
   initialState,
-  reducers: {
-    updateTop100: (state, action) => {
-      return {};
-      // state.push(action.payload);
-    },
-    signIn: (state, action) => {
-      return {
-        username: action.payload.username,
-        token: action.payload.token,
-      };
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(_signIn.pending, (state, action) => {
+      .addCase(signIn.pending, (state, action) => {
         state.loading = true;
         state.error = "";
       })
-      .addCase(_signIn.fulfilled, (state, action) => {
+      .addCase(signIn.fulfilled, (state, action) => {
         state.username = action.meta.arg.username;
         state.token = action.payload;
         state.loading = false;
         state.error = "";
         success = true;
       })
-      .addCase(_signIn.rejected, (state, action) => {
+      .addCase(signIn.rejected, (state, action) => {
         state.loading = false;
         state.error = "Tài khoản hoặc mật khẩu sai";
         success = false;
@@ -62,10 +50,10 @@ export const userSlice = createSlice({
   },
 });
 
-export const _signIn = createAsyncThunk("user/_signIn", async (infoSignIn) => {
+export const signIn = createAsyncThunk("user/signIn", async (infoSignIn) => {
   try {
     const response = await axios.post(
-      `${baseUrl}/api/Accounts/SignIn`,
+      `${BASE_URL}/api/Accounts/SignIn`,
       infoSignIn
     );
     return response.data;
@@ -77,9 +65,8 @@ export const _signIn = createAsyncThunk("user/_signIn", async (infoSignIn) => {
 
 export const signUp = createAsyncThunk("user/signUp", async (infoSignUp) => {
   try {
-    console.log(infoSignUp);
     const response = await axios.post(
-      `${baseUrl}/api/Accounts/SignUp`,
+      `${BASE_URL}/api/Accounts/SignUp`,
       infoSignUp
     );
     return response.data;
@@ -88,6 +75,6 @@ export const signUp = createAsyncThunk("user/signUp", async (infoSignUp) => {
   }
 });
 
-export const { updateTop100, signIn } = userSlice.actions;
+export const {} = userSlice.actions;
 
 export default userSlice.reducer;

@@ -22,6 +22,7 @@ builder.Services.AddDbContext<SoundCloudContext>(options =>
 
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ISongLikeRepository, SongLikeRepository>();
 
 
 // Cấu hình mật khẩu

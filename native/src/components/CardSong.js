@@ -1,78 +1,44 @@
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-} from "react-native";
-import React, { useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { Audio } from "expo-av";
-import { playSong, pauseSong, cancelSong } from "../redux/playSongSlice";
-
+import React, { useEffect } from "react";
+import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import ModalSong from "./ModalSong";
+import { useAudio } from "../common/AudioProvider";
+import { playSong } from "../redux/playSongSlice";
+import { TYPE_ACTION } from "../common/typeAction";
+import { showModal } from "../redux/modalSlice";
 export default function Card({ props }) {
   const { img, nameSong, nameAuthor, linkSong } = props;
-  const playSongObj = useSelector((state) => state.playSong);
+  const playSongStore = useSelector((state) => state.playSong);
   const dispatch = useDispatch();
-  const sound = React.useRef(new Audio.Sound());
-  const SampleTrack = require('../../assets/music.mp3');
-
-  const playSound = async () => {
-    const checkLoading = await sound.current.getStatusAsync();
-    console.log("log ra");
-    console.log(checkLoading);
-    if (!checkLoading.isLoaded) {
-      console.log("Trước khi dispatch");
-      console.log(playSongObj);
-      console.log("Gia tri truyen vao");
-      console.log(`${nameSong} ${nameAuthor}`);
-      // dispatch(
-      //   playSong({
-      //     img: "",
-      //     nameSong: nameSong,
-      //     nameAuthor: nameAuthor,
-      //     linkSong: linkSong,
-      //   })
-      // );
-      // // await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      // console.log("Sau khi dispatch");
-      // console.log(playSongObj);
-
-      // const { sound: playbackObject } = await Audio.Sound.createAsync(
-      //   { uri: playSongObj.linkSong },
-      //   { shouldPlay: true }
-      // );
-      try {
-        const result = await sound.current.loadAsync(SampleTrack, {}, true);
-        sound.current.playAsync();
-        if (result.isLoaded === false) {
-          console.log('Error in Loading Audio');
-        } else {
-        }
-      } catch (error) {
-        console.log(error);
-      }
+  const { test, playSound } = useAudio();
+  const playSoundAction = async () => {
+    if (nameSong !== playSongStore.nameSong) {
+      console.log("play");
+      dispatch(
+        playSong({
+          img: "",
+          nameSong: nameSong,
+          nameAuthor: nameAuthor,
+          linkSong: linkSong,
+          typeAction: TYPE_ACTION.CHANGE,
+        })
+      );
+      dispatch(showModal());
     } else {
-      // await Audio.setIsEnabledAsync(false);
-      console.log("Chui vao else");
-      sound.current.pauseAsync();
-      // Tạo và phát âm thanh mới
-      // const { sound: playbackObject } = await Audio.Sound.createAsync(
-      //   { uri: linkSong },
-      //   { shouldPlay: true }
-      // );
+      dispatch(showModal());
     }
   };
 
+  // useEffect(() => {
+  //   if (playSongStore.playing && nameSong === playSongStore.nameSong) {
+  //     playSound({ uri: playSongStore.linkSong });
+  //   } else if (nameSong !== playSongStore.nameSong) {
+  //     cancelSound();
+  //   }
+  // }, [playSongStore]);
+
   return (
-    <TouchableOpacity onPress={() => playSound()}>
+    <TouchableOpacity onPress={() => playSoundAction()}>
       <View style={{ width: 130 }}>
         <Image
           style={{
@@ -116,6 +82,7 @@ export default function Card({ props }) {
           {nameAuthor}
         </Text>
       </View>
+      <ModalSong></ModalSong>
     </TouchableOpacity>
   );
 }
