@@ -32,10 +32,15 @@ namespace backend.Repositories
                 return string.Empty;
             }
 
+            var user = await userManager.FindByNameAsync(model.Username);
             var authClaims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email, model.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                //new Claim(ClaimTypes.Email, model.Username),
+                new Claim("username", model.Username),
+                new Claim("idUser", user.Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, model.Username),
+                //new Claim(ClaimTypes.NameIdentifier, userManager.GetUserId(User),
             };
 
             var authenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]));

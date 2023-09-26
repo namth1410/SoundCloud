@@ -7,15 +7,17 @@ import { playSong } from "../redux/playSongSlice";
 import { TYPE_ACTION } from "../common/typeAction";
 import { showModal } from "../redux/modalSlice";
 export default function Card({ props }) {
-  const { img, nameSong, nameAuthor, linkSong } = props;
+  const { id, img, nameSong, nameAuthor, linkSong } = props;
   const playSongStore = useSelector((state) => state.playSong);
   const dispatch = useDispatch();
   const { test, playSound } = useAudio();
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.nameSong) {
       console.log("play");
+      console.log(id);
       dispatch(
         playSong({
+          id: id,
           img: "",
           nameSong: nameSong,
           nameAuthor: nameAuthor,
@@ -82,7 +84,6 @@ export default function Card({ props }) {
           {nameAuthor}
         </Text>
       </View>
-      <ModalSong></ModalSong>
     </TouchableOpacity>
   );
 }

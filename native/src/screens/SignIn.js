@@ -19,7 +19,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { useSelector, useDispatch } from "react-redux";
 import { _signIn, signIn } from "../redux/userSlice";
 import axios from "axios";
-import { getAllSong } from "../redux/songSlice";
+import { getAllSong, getSongLikeList } from "../redux/songSlice";
 const baseUrl = "https://4e76-27-72-145-105.ngrok-free.app";
 function createInfoUser(username, password) {
   return {
@@ -38,9 +38,9 @@ export default function SignIn({ navigation }) {
   const handleSignIn = async () => {
     try {
       Keyboard.dismiss();
-      await dispatch(_signIn(createInfoUser(username, password))).then(
-        () => {}
-      );
+      await dispatch(signIn(createInfoUser(username, password))).then(() => {
+        dispatch(getAllSong());
+      });
     } catch (error) {
       console.log(error);
     }

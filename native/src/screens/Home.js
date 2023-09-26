@@ -11,15 +11,19 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { storage } from "../api/firebase";
 import PlayList from "../components/PlayList";
+import { getSongLikeList } from "../redux/songSlice";
 
 export default function Home({ navigation }) {
   const allSong = useSelector((state) => state.allSong);
   const playSongStore = useSelector((state) => state.playSong);
+  const userInfo = useSelector((state) => state.userInfo);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    dispatch(getSongLikeList({ token: userInfo.token }));
+  }, []);
+  useEffect(() => {
     if (playSongStore.playinng) {
-
     }
   }, [playSongStore]);
 

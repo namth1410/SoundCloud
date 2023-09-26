@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { TYPE_ACTION } from "../common/typeAction";
 
 const initialState = {
+  id: "",
   nameSong: "",
   nameAuthor: "",
   linkSong: "",
@@ -17,8 +18,10 @@ export const playSongSlice = createSlice({
   initialState,
   reducers: {
     playSong: (state, action) => {
+      console.log(action.payload);
       return {
         ...state,
+        id: action.payload.id,
         nameSong: action.payload.nameSong,
         nameAuthor: action.payload.nameAuthor,
         linkSong: action.payload.linkSong,
