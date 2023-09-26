@@ -4,7 +4,7 @@ const Song = {
   nameAuthor: "",
   linkSong: "",
   lyric: "",
-  img: ""
+  img: "",
 };
 
 export default Song;

@@ -16,13 +16,92 @@ import Slider from "@react-native-community/slider";
 import { hideModal } from "../redux/modalSlice";
 import { continuePlaySong, pauseSong } from "../redux/playSongSlice";
 import { useAudio } from "../common/AudioProvider";
+import { SwiperFlatList } from "react-native-swiper-flatlist";
+import {
+  addSongLike,
+  addSongLikeAsync,
+  deleteSongLike,
+  deleteSongLikeAsync,
+} from "../redux/songSlice";
+import Song from "../model/Song";
+import { Dimensions } from "react-native";
 
 export default function ModalSong() {
   const playSongStore = useSelector((state) => state.playSong);
+  const userInfo = useSelector((state) => state.userInfo);
   const modalStore = useSelector((state) => state.modal);
+  const allSongStore = useSelector((state) => state.allSong);
+  const [isLiked, setIsLiked] = useState(false);
   const dispatch = useDispatch();
   const { duration } = useAudio();
   const [sliderValue, setSliderValue] = useState("");
+  const { width } = Dimensions.get("window");
+
+  const likeSongAction = async () => {
+    try {
+      if (userInfo.token) {
+        if (!isLiked) {
+          setIsLiked(true);
+          dispatch(
+            addSongLike({
+              id: playSongStore.id,
+              nameSong: playSongStore.nameSong,
+              nameAuthor: playSongStore.nameAuthor,
+              linkSong: "",
+              lyric: "",
+              img: "",
+            })
+          );
+          await dispatch(
+            addSongLikeAsync({
+              idSong: playSongStore.id,
+              token: userInfo.token,
+            })
+          )
+            .then(() => {})
+            .catch((error) => {
+              console.error(
+                "Action addSongLike bị từ chối hoặc gặp lỗi:",
+                error
+              );
+              setIsLiked(false);
+            });
+        } else {
+          setIsLiked(false);
+          dispatch(
+            deleteSongLike({
+              id: playSongStore.id,
+              nameSong: playSongStore.nameSong,
+              nameAuthor: playSongStore.nameAuthor,
+              linkSong: "",
+              lyric: "",
+              img: "",
+            })
+          );
+          await dispatch(
+            deleteSongLikeAsync({
+              idSong: playSongStore.id,
+              token: userInfo.token,
+            })
+          )
+            .then(() => {})
+            .catch((error) => {
+              console.error(
+                "Action deleteSongLike bị từ chối hoặc gặp lỗi:",
+                error
+              );
+              setIsLiked(true);
+            });
+        }
+      } else {
+        alert("Chưa đăng nhập");
+        return;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const pausePlayAction = () => {
     if (playSongStore.playing) {
       dispatch(pauseSong());
@@ -48,11 +127,23 @@ export default function ModalSong() {
   }
 
   useEffect(() => {
-    setSliderValue(formatMillisecondsToTime(0));
-  }, []);
+    console.log("asds");
+    console.log(modalStore.display);
+    console.log(allSongStore.songLikeList);
+    console.log(playSongStore);
+    console.log(
+      !!allSongStore.songLikeList.find((item) => item.id === playSongStore.id)
+    );
+    if (modalStore.display) {
+      setIsLiked(
+        !!allSongStore.songLikeList.find((item) => item.id === playSongStore.id)
+      );
+    }
+  }, [playSongStore, modalStore.display]);
   useEffect(() => {
     setSliderValue(formatMillisecondsToTime(duration));
   }, [duration]);
+
   return (
     <Modal
       animationIn={"slideInUp"}
@@ -66,17 +157,51 @@ export default function ModalSong() {
       onSwipeComplete={() => {
         dispatch(hideModal());
       }}
-      style={{ margin: 0 }}
+      style={{ margin: 0, marginTop: 20 }}
     >
       <View style={{ ...styles.centeredView, backgroundColor: "yellow" }}>
         <View style={{ paddingTop: 20, paddingLeft: 32 }}>
           <Ionicons name="chevron-down-outline" size={32} color="gray" />
         </View>
-        <View style={styles.coverContainer}>
-          <Image
-            source={require("../../assets/musique.jpg")}
-            style={styles.cover}
-          ></Image>
+        <View style={{ height: "50%", width: "100%" }}>
+          <SwiperFlatList
+            style={{
+              backgroundColor: "green",
+              display: "flex",
+              height: 200,
+              position: "relative",
+            }}
+            autoplay
+            autoplayDelay={2}
+            autoplayLoop
+            index={0}
+            showPagination
+          >
+            <View
+              style={{
+                ...styles.coverContainer,
+                backgroundColor: "red",
+                width: width,
+              }}
+            >
+              {/* <Image
+                source={require("../../assets/musique.jpg")}
+                style={styles.cover}
+              ></Image> */}
+            </View>
+            <View
+              style={{
+                ...styles.coverContainer,
+                backgroundColor: "green",
+                width: width,
+              }}
+            >
+              {/* <Image
+                source={require("../../assets/musique.jpg")}
+                style={styles.cover}
+              ></Image> */}
+            </View>
+          </SwiperFlatList>
         </View>
 
         <View
@@ -89,8 +214,12 @@ export default function ModalSong() {
             justifyContent: "space-between",
           }}
         >
-          <TouchableOpacity>
-            <Ionicons name="heart-outline" size={32} color="gray" />
+          <TouchableOpacity onPress={likeSongAction}>
+            {isLiked ? (
+              <Ionicons name="heart" size={32} color="gray" />
+            ) : (
+              <Ionicons name="heart-outline" size={32} color="gray" />
+            )}
           </TouchableOpacity>
           <View
             style={{
@@ -197,10 +326,8 @@ const styles = StyleSheet.create({
     color: "#3D425C",
   },
   coverContainer: {
-    marginTop: 32,
-    width: 250,
-    height: 250,
-    alignSelf: "center",
+    flex: 1,
+    height: "100%",
   },
   cover: {
     width: 250,

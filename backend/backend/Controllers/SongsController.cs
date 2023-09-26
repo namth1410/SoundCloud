@@ -4,6 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Security.Claims;
+using System.Security.Principal;
+using System.Xml;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace backend.Controllers
 {
@@ -12,12 +18,12 @@ namespace backend.Controllers
     public class SongsController : ControllerBase
     {
         private readonly SoundCloudContext _context;
-        private readonly ISongLikeRepository _songLikeRepository;
+        private readonly ISongRepository _songRepository;
         private readonly UserManager<IdentityUser> _userManager;
-        public SongsController(SoundCloudContext context, ISongLikeRepository songLikeRepository, UserManager<IdentityUser> userManager)
+        public SongsController(SoundCloudContext context, ISongRepository songRepository, UserManager<IdentityUser> userManager)
         {
             _context = context;
-            _songLikeRepository = songLikeRepository;
+            _songRepository = songRepository;
             _userManager = userManager;
         }
 
@@ -31,23 +37,72 @@ namespace backend.Controllers
             {
                 return NotFound();
             }
-            return await _songLikeRepository.getSongLikeList(1);
+            var identity = (ClaimsIdentity)User.Identity;
+
+            var idUser = identity.FindFirst("idUser").Value;
+            return await _songRepository.getSongLikeList(idUser);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost("addSongLike")]
-        public async Task<ActionResult> PostSongLike()
+        public async Task<ActionResult> PostSongLike([FromQuery] string idSong)
         {
-            if (_context.SongLike == null)
-            {
-                return Problem("Entity set 'SoundCloudContext.Songs'  is null.");
-            }
-            var user = await _userManager.GetUserAsync(User);
-            //var idUser = user.Id;
-            //_context.SongLike.Add(song);
-            //await _context.SaveChangesAsync();
+            /*            if (_context.SongLike == null)
+                        {
+                            return Problem("Entity set 'SoundCloudContext.Songs'  is null.");
+                        }*/
 
-            return Ok("a");
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var identity = (ClaimsIdentity)User.Identity;
+            var t = identity.FindFirst("idUser").Value;
+
+
+            var claims = identity.Claims.Select(c => new { Type = c.Type, Value = c.Value });
+            var usernameClaim = identity.Claims
+                .FirstOrDefault(c => c.Type == "username");
+            var username = identity.Claims
+                .Where(c => c.Type == "idUser")
+                .Select(c => c.Value);
+            //var json = JsonConvert.SerializeObject(usernameClaim, Formatting.Indented);
+            //var jObject = JObject.Parse(json);
+            //var user = await _userManager.GetUserAsync(User);
+            //var idUser = user.Id;
+            var existingSongLike = await _context.SongLike
+                .FirstOrDefaultAsync(sl => sl.IdUser == t && sl.IdSong == int.Parse(idSong));
+            if (existingSongLike != null)
+            {
+                // Nếu đã tồn tại, bạn có thể xử lý tương ứng, ví dụ: trả về lỗi hoặc thông báo rằng đã tồn tại.
+                return BadRequest("Dòng dữ liệu đã tồn tại.");
+            }
+            var song = new SongLike();
+            song.IdUser = t;
+            song.IdSong = int.Parse(idSong);
+            _context.SongLike.Add(song);
+            await _context.SaveChangesAsync();
+
+            return Ok(username);
+        }
+
+        [Authorize]
+        [HttpDelete("deleteSongLike")]
+        public async Task<ActionResult> DeleteSongLike([FromQuery] string idSong)
+        {
+            var identity = (ClaimsIdentity)User.Identity;
+            var idUser = identity.FindFirst("idUser").Value;
+
+            var songLikeToDelete = _context.SongLike
+                    .FirstOrDefault(sl => sl.IdUser == idUser && sl.IdSong == int.Parse(idSong));
+
+            if (songLikeToDelete != null)
+            {
+                _context.SongLike.Remove(songLikeToDelete);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+            else
+            {
+                return NotFound("Không tìm thấy dòng dữ liệu để xóa.");
+            }
         }
 
         // GET: api/Songs

@@ -11,18 +11,6 @@ namespace backend.Repositories
         {
             this.context = context;
         }
-        public async Task<List<Song>> getSongLikeList(int idUser)
-        {
-            var likedSongIds = await context.SongLike
-                    .Where(like => like.IdUser == idUser)
-                    .Select(like => like.IdSong)
-                    .ToListAsync();
 
-            var songs = await context.Songs
-                .Where(song => likedSongIds.Contains(song.Id))
-                .ToListAsync();
-
-            return songs;
-        }
     }
 }

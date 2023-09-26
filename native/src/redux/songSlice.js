@@ -1,10 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { BASE_URL } from "./configAPI";
-
+import { useSelector } from "react-redux";
 
 const initialState = {
   songs: [],
+  songLikeList: [],
   timeRelease: "",
   loading: false,
   error: "",
@@ -14,7 +15,21 @@ const initialState = {
 export const songSlice = createSlice({
   name: "song",
   initialState,
-  reducers: {},
+  reducers: {
+    addSongLike: (state, action) => {
+      return {
+        ...state,
+        songLikeList: [...state.songLikeList, action.payload],
+      };
+    },
+
+    deleteSongLike: (state, action) => {
+      return {
+        ...state,
+        songLikeList: state.songLikeList.filter(item => item.id !== action.payload.id),
+      };
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getAllSong.pending, (state, action) => {
@@ -29,7 +44,53 @@ export const songSlice = createSlice({
       })
       .addCase(getAllSong.rejected, (state, action) => {
         state.loading = false;
-        state.error = "API lỗi";
+        state.error = "Lấy tất cả bài hát lỗi";
+        success = false;
+      })
+
+      .addCase(getSongLikeList.pending, (state, action) => {
+        state.loading = true;
+        state.error = "";
+      })
+      .addCase(getSongLikeList.fulfilled, (state, action) => {
+        state.songLikeList = action.payload;
+        state.loading = false;
+        state.error = "";
+        success = true;
+      })
+      .addCase(getSongLikeList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = "Lấy danh sách bài hát yêu thích lỗi";
+        success = false;
+      })
+
+      .addCase(addSongLikeAsync.pending, (state, action) => {
+        state.loading = true;
+        state.error = "";
+      })
+      .addCase(addSongLikeAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = "";
+        success = true;
+      })
+      .addCase(addSongLikeAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = "Thêm bài hát vào danh sách yêu thích lỗi";
+        success = false;
+      })
+
+      .addCase(deleteSongLikeAsync.pending, (state, action) => {
+        state.loading = true;
+        state.error = "";
+      })
+      .addCase(deleteSongLikeAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = "";
+        success = true;
+      })
+      .addCase(deleteSongLikeAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = "Xóa bài hát vào danh sách yêu thích lỗi";
         success = false;
       });
   },
@@ -40,11 +101,92 @@ export const getAllSong = createAsyncThunk("song/getAllSong", async () => {
     const response = await axios.get(`${BASE_URL}/api/Songs`);
     return response.data;
   } catch (error) {
-    console.error("Lỗi rồi: ", error);
+    console.error("Lỗi rồi: ", error.response.data);
     throw error;
   }
 });
 
-export const {} = songSlice.actions;
+export const getSongLikeList = createAsyncThunk(
+  "song/getSongLikeList",
+  async (info) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: "Bearer " + info.token,
+        },
+      };
+
+      const response = await axios.get(
+        `${BASE_URL}/api/Songs/getSongLike`,
+        config
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách bài hát yêu thích: ", error);
+      console.error(
+        "Lỗi khi tải danh sách bài hát yêu thích: ",
+        error.response.data
+      );
+      throw error;
+    }
+  }
+);
+
+export const addSongLikeAsync = createAsyncThunk(
+  "song/addSongLike",
+  async (info) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: "Bearer " + info.token,
+        },
+        params: {
+          idSong: info.idSong,
+        },
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/Songs/addSongLike`,
+        {},
+        config
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi thêm bài hát yêu thích: ", error.response.data);
+      throw error;
+    }
+  }
+);
+
+export const deleteSongLikeAsync = createAsyncThunk(
+  "song/deleteSongLike",
+  async (info) => {
+    try {
+      console.log(info);
+      const config = {
+        headers: {
+          Authorization: "Bearer " + info.token,
+        },
+        params: {
+          idSong: info.idSong.toString(),
+        },
+      };
+
+      const response = await axios.delete(
+        `${BASE_URL}/api/Songs/deleteSongLike`,
+        config
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi xóa bài hát yêu thích: ", error);
+      throw error;
+    }
+  }
+);
+
+export const {addSongLike, deleteSongLike} = songSlice.actions;
 
 export default songSlice.reducer;

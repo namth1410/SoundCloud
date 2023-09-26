@@ -17,6 +17,7 @@ import DetailSong from "./src/screens/DetailSong";
 import ModalSong from "./src/components/ModalSong";
 import Song from "./src/components/Song";
 import { AudioProvider } from "./src/common/AudioProvider";
+import { StatusBar } from "expo-status-bar";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,6 +39,7 @@ function SoundCloudTabs() {
   const modal = useSelector((state) => state.modal);
   return (
     <AudioProvider>
+      <StatusBar translucent={true}></StatusBar>
       <SafeAreaView style={{ flex: 1 }}>
         <Tab.Navigator
           screenOptions={({ route }) => ({
@@ -74,6 +76,7 @@ function SoundCloudTabs() {
           <></>
         )}
         {/* {false ? <ControlSong></ControlSong> : <></>} */}
+        {modal.display ? <ModalSong></ModalSong> : <></>}
       </SafeAreaView>
     </AudioProvider>
   );

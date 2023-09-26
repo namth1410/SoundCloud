@@ -58,7 +58,7 @@ export const signIn = createAsyncThunk("user/signIn", async (infoSignIn) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Lỗi rồi: ", error);
+    console.error("Lỗi rồi: ", error.response.data);
     throw error;
   }
 });
