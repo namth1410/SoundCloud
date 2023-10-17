@@ -1,23 +1,26 @@
-import { StatusBar } from "expo-status-bar";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-} from "react-native";
-import React, { useEffect } from "react";
-import Icon from "react-native-vector-icons/FontAwesome";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React from "react";
+import { Text, View } from "react-native";
+import SuggestSongList from "../components/SuggestSongList";
 
-export default function Search({ navigation }) {
+export default function Search({}) {
   return (
     <View style={{ backgroundColor: "white", flex: 1 }}>
       <Text>Search</Text>
+      {/* {showLottie && (
+        <LottieView
+          style={{
+            width: 400,
+            height: 400,
+          }}
+          ref={lottieRef}
+          source={require("../../assets/heart.json")}
+          renderMode={"SOFTWARE"}
+          loop={false}
+          onAnimationFinish={handleAnimationFinish}
+        />
+      )} */}
+
+      <SuggestSongList></SuggestSongList>
     </View>
   );
 }

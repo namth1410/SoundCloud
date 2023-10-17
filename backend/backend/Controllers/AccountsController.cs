@@ -48,8 +48,8 @@ namespace backend.Controllers
         public async Task<IActionResult> SignIn(SignInModel signInModel)
         {
             var result = await accountRepo.SignInAsync(signInModel);
-
-            if (string.IsNullOrEmpty(result))
+            Console.WriteLine(result);
+            if (result == null)
             {
                 return Unauthorized();
             }

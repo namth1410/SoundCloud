@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import React from "react";
 import {
   Animated,
   Easing,
@@ -8,25 +9,29 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useDispatch, useSelector } from "react-redux";
-import { continuePlaySound, pauseSound, playSound } from "../common/appSong";
-import { TYPE_ACTION } from "../common/typeAction";
-import { continuePlaySong, pauseSong } from "../redux/playSongSlice";
-import { showModal } from "../redux/modalSlice";
+import { useSelector } from "react-redux";
+import { useAudio } from "../common/AudioProvider";
 
 export default function ControlSong() {
-  const playSongStore = useSelector((state) => state.playSong);
-  const dispatch = useDispatch();
+  const { playing, pauseSound, continuePlaySound } = useAudio();
+  const navigation = useNavigation();
+  const playSongStore = useSelector((state) => state.playSongRedux);
   const pauseAction = () => {
-    if (playSongStore.playing) {
-      dispatch(pauseSong());
+    if (playing) {
+      pauseSound();
     } else {
-      dispatch(continuePlaySong());
+      continuePlaySound();
     }
+    // if (playSongStore.playing) {
+    //   dispatch(pauseSong());
+    // } else {
+    //   dispatch(continuePlaySong());
+    // }
   };
 
   const clickControlSong = () => {
-    dispatch(showModal());
+    // dispatch(showModal());
+    navigation.navigate("ModalSongV3");
   };
 
   const spinValue = new Animated.Value(0);
@@ -48,7 +53,7 @@ export default function ControlSong() {
     <View style={styles.box}>
       <View style={styles.container}>
         <TouchableOpacity
-          style={{...styles.container}}
+          style={{ ...styles.container }}
           onPress={clickControlSong}
         >
           <Animated.Image
@@ -83,8 +88,8 @@ export default function ControlSong() {
               flexDirection: "row",
             }}
           >
-            <TouchableOpacity style={styles.control} onPress={pauseAction}>
-              {playSongStore.playing ? (
+            <TouchableOpacity style={styles.control} onPressIn={pauseAction}>
+              {playing ? (
                 <Ionicons name="pause-outline" size={40} color="#fff" />
               ) : (
                 <Ionicons name="play-outline" size={40} color="#fff" />
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3F3434",
     alignItems: "",
     position: "absolute",
-    bottom: 50,
+    bottom: 49,
     left: 0,
     right: 0,
   },
@@ -146,7 +151,7 @@ const styles = StyleSheet.create({
   },
   controls: {
     justifyContent: "flex-end",
-    marginRight: 10
+    marginRight: 10,
   },
 
   control: {

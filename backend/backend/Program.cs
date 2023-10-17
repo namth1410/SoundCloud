@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+builder.Services.AddIdentity<Account, IdentityRole>()
     .AddEntityFrameworkStores<SoundCloudContext>().AddDefaultTokenProviders();
 builder.Services.AddDbContext<SoundCloudContext>(options =>
 {

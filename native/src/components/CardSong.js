@@ -1,20 +1,19 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import ModalSong from "./ModalSong";
 import { useAudio } from "../common/AudioProvider";
+import { addHistoryAsync } from "../redux/historySlice";
 import { playSong } from "../redux/playSongSlice";
-import { TYPE_ACTION } from "../common/typeAction";
-import { showModal } from "../redux/modalSlice";
 export default function Card({ props }) {
   const { id, img, nameSong, nameAuthor, linkSong } = props;
-  const playSongStore = useSelector((state) => state.playSong);
+  const playSongStore = useSelector((state) => state.playSongRedux);
+  const userInfoRedux = useSelector((state) => state.userInfo);
   const dispatch = useDispatch();
-  const { test, playSound } = useAudio();
+  const { playSound } = useAudio();
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.nameSong) {
-      console.log("play");
-      console.log(id);
+      playSound({ uri: linkSong });
+      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
       dispatch(
         playSong({
           id: id,
@@ -22,25 +21,14 @@ export default function Card({ props }) {
           nameSong: nameSong,
           nameAuthor: nameAuthor,
           linkSong: linkSong,
-          typeAction: TYPE_ACTION.CHANGE,
         })
       );
-      dispatch(showModal());
     } else {
-      dispatch(showModal());
     }
   };
 
-  // useEffect(() => {
-  //   if (playSongStore.playing && nameSong === playSongStore.nameSong) {
-  //     playSound({ uri: playSongStore.linkSong });
-  //   } else if (nameSong !== playSongStore.nameSong) {
-  //     cancelSound();
-  //   }
-  // }, [playSongStore]);
-
   return (
-    <TouchableOpacity onPress={() => playSoundAction()}>
+    <TouchableOpacity onPressIn={() => playSoundAction()}>
       <View style={{ width: 130 }}>
         <Image
           style={{

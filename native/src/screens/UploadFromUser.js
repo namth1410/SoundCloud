@@ -1,18 +1,6 @@
 import { StatusBar } from "expo-status-bar";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-  ScrollView,
-} from "react-native";
-import React, { useEffect } from "react";
-import Icon from "react-native-vector-icons/FontAwesome";
+import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
@@ -43,7 +31,7 @@ const Option = ({ title }) => {
   );
 };
 
-export default function Library({ navigation }) {
+export default function UploadFromUser({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View
@@ -63,14 +51,15 @@ export default function Library({ navigation }) {
             paddingBottom: 12,
           }}
         >
-          Library
+          Cloud
         </Text>
 
-        <ScrollView>
-          <Option title="Tracks yêu thích"></Option>
-          <Option title="Tracks yêu thích"></Option>
-          <Option title="Tracks yêu thích"></Option>
-        </ScrollView>
+        <View style={{ backgroundColor: "yellow", padding: 10 }}>
+          <ScrollView>
+            <Option title="Tracks yêu thích"></Option>
+            <Option title="Tracks yêu thích"></Option>
+          </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );

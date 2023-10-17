@@ -2,6 +2,7 @@
 {
     public class SongModel
     {
-        public int NameSong { get; set; }
+        public string nameSong { get; set; }
+        public string linkSong { get; set; }
     }
 }

@@ -1,26 +1,19 @@
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
+  Keyboard,
   StyleSheet,
   Text,
-  View,
   TextInput,
-  TouchableHighlight,
-  Button,
   TouchableOpacity,
-  TouchableOpacityBase,
-  ActivityIndicator,
   TouchableWithoutFeedback,
-  Keyboard,
+  View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import Icon from "react-native-vector-icons/FontAwesome";
 
-import { useSelector, useDispatch } from "react-redux";
-import { _signIn, signIn } from "../redux/userSlice";
-import axios from "axios";
-import { getAllSong, getSongLikeList } from "../redux/songSlice";
-const baseUrl = "https://4e76-27-72-145-105.ngrok-free.app";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllSong } from "../redux/songSlice";
+import { signIn } from "../redux/userSlice";
 function createInfoUser(username, password) {
   return {
     username: username,
@@ -33,6 +26,7 @@ export default function SignIn({ navigation }) {
   const [password, setPassword] = useState("");
 
   const userInfo = useSelector((state) => state.userInfo);
+  const allSong = useSelector((state) => state.allSong);
   const dispatch = useDispatch();
 
   const handleSignIn = async () => {
@@ -47,40 +41,59 @@ export default function SignIn({ navigation }) {
     // dispatch(signIn(createInfoUser(username, password)));
   };
 
-  const handleSignInWithoutAccount = () => {
+  const handleSignInWithoutAccount = async () => {
     try {
       Keyboard.dismiss();
-      dispatch(getAllSong());
+      await dispatch(getAllSong());
     } catch (error) {
       console.log(error);
     }
     Keyboard.dismiss();
-    navigation.navigate("SoundCloudTabs");
+    navigation.navigate("Main");
   };
 
   useEffect(() => {}, []);
 
+  // useEffect(() => {
+  //   if (userInfo.username) {
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [{ name: "Main" }],
+  //     });
+  //   }
+  // }, [userInfo]);
+
   useEffect(() => {
-    if (userInfo.username) {
+    if (allSong.songs.length > 0) {
       navigation.reset({
         index: 0,
-        routes: [{ name: "SoundCloudTabs" }],
+        routes: [{ name: "Main" }],
       });
     }
-  }, [userInfo]);
+  }, [allSong]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ backgroundColor: "white", flex: 1 }}>
         <View style={styles.head}>
-          <Image
-            source={require("../../assets/logo.png")}
-            style={{
-              resizeMode: "contain",
-              height: 100,
-              width: 200,
+          <TouchableOpacity
+            onPress={async () => {
+              await dispatch(signIn(createInfoUser("string1", "string1"))).then(
+                () => {
+                  dispatch(getAllSong());
+                }
+              );
             }}
-          />
+          >
+            <Image
+              source={require("../../assets/logo.png")}
+              style={{
+                resizeMode: "contain",
+                height: 100,
+                width: 200,
+              }}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.form}>
@@ -121,7 +134,7 @@ export default function SignIn({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-        {userInfo.loading ? (
+        {userInfo.loading || allSong.loading ? (
           <View
             style={{
               ...StyleSheet.absoluteFillObject,

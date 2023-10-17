@@ -1,4 +1,3 @@
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import React, { useEffect } from "react";
 import {
   SafeAreaView,
@@ -9,49 +8,31 @@ import {
   View,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { storage } from "../api/firebase";
 import PlayList from "../components/PlayList";
-import { getSongLikeList } from "../redux/songSlice";
+import { getHistoryList } from "../redux/historySlice";
+import { getPlaylists } from "../redux/playlistSlice";
+import { getSongLikeList } from "../redux/songLikeSlice";
+import { fakeDataSuggestSongList } from "../redux/suggestSongSlice";
 
-export default function Home({ navigation }) {
+export default function Home({}) {
   const allSong = useSelector((state) => state.allSong);
-  const playSongStore = useSelector((state) => state.playSong);
+  const playSongStore = useSelector((state) => state.playSongRedux);
   const userInfo = useSelector((state) => state.userInfo);
+  const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getSongLikeList({ token: userInfo.token }));
-  }, []);
-  useEffect(() => {
-    if (playSongStore.playinng) {
+    if (userInfo.token) {
+      dispatch(getSongLikeList({ token: userInfo.token }));
+      dispatch(getHistoryList({ token: userInfo.token }));
+      dispatch(getPlaylists({ token: userInfo.token }));
     }
-  }, [playSongStore]);
+  }, []);
 
-  async function testUpFileMP3() {
-    const uri =
-      "https://firebasestorage.googleapis.com/v0/b/soundcloud-398901.appspot.com/o/songs%2FC%C3%A1nh%20Thi%E1%BB%87p%20%C4%90%E1%BA%A7u%20Xu%C3%A2n%20%20Ph%C6%B0%C6%A1ng%20Anh%20Official%20MV.mp3?alt=media&token=b8be753b-ab5b-47af-a585-2fed91829ed2";
-    const response = await fetch(uri);
-    const blob = await response.blob();
-
-    const storageRef = ref(storage, "Stuff/" + new Date().getTime());
-    const uploadTask = uploadBytesResumable(storageRef, blob, {
-      contentType: "audio/mpeg",
-    });
-
-    // listen for events
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {},
-      (error) => {
-        // handle error
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-          console.log("File available at", downloadURL);
-        });
-      }
-    );
-  }
+  useEffect(() => {
+    dispatch(fakeDataSuggestSongList([...allSong.songs]));
+    console.log(suggestSongRedux.suggestSongList);
+  }, [allSong.songs]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -76,6 +57,15 @@ export default function Home({ navigation }) {
             {`Home`}
           </Text>
         </TouchableOpacity>
+        {/* <DoubleTap
+          onPress={() => {
+            console.log("double");
+          }} // Handler after double tap on button
+          delay={500} // Delay between tapas
+          component={TouchableOpacity} // Custom component with onPress (default: TouchableOpacity)
+        >
+          <Text>Click me pls!</Text>
+        </DoubleTap> */}
 
         <ScrollView>
           <PlayList
