@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { TYPE_ACTION } from "../common/typeAction";
 
 const initialState = {
   id: "",
@@ -7,7 +6,6 @@ const initialState = {
   nameAuthor: "",
   linkSong: "",
   playing: false,
-  typeAction: "",
   loading: false,
   error: "",
   success: false,
@@ -18,7 +16,6 @@ export const playSongSlice = createSlice({
   initialState,
   reducers: {
     playSong: (state, action) => {
-      console.log(action.payload);
       return {
         ...state,
         id: action.payload.id,
@@ -26,7 +23,6 @@ export const playSongSlice = createSlice({
         nameAuthor: action.payload.nameAuthor,
         linkSong: action.payload.linkSong,
         playing: true,
-        typeAction: action.payload.typeAction,
       };
     },
 
@@ -34,14 +30,12 @@ export const playSongSlice = createSlice({
       return {
         ...state,
         playing: false,
-        typeAction: TYPE_ACTION.PAUSE,
       };
     },
     continuePlaySong: (state, action) => {
       return {
         ...state,
         playing: true,
-        typeAction: TYPE_ACTION.CONTINUE,
       };
     },
     cancelSong: (state, action) => {

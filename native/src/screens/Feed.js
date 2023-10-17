@@ -1,23 +1,24 @@
-import { StatusBar } from "expo-status-bar";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-} from "react-native";
-import React, { useEffect } from "react";
-import Icon from "react-native-vector-icons/FontAwesome";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React from "react";
+import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 
-export default function Feed({ navigation }) {
+export default function Feed({}) {
   return (
-    <View style={{ backgroundColor: "white", flex: 1 }}>
-      <Text>Feed</Text>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View
+        style={{
+          backgroundColor: "red",
+          flex: 1,
+          width: 100,
+          height: 100,
+          position: "absolute",
+          top: 0,
+          left: 0,
+        }}
+      >
+        <TouchableOpacity>
+          <Text>Start the modal flow!</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }

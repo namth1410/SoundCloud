@@ -4,6 +4,8 @@ import { BASE_URL } from "./configAPI";
 
 const initialState = {
   username: "",
+  name: "",
+  email: "",
   token: "",
   loading: false,
   error: "",
@@ -21,8 +23,10 @@ export const userSlice = createSlice({
         state.error = "";
       })
       .addCase(signIn.fulfilled, (state, action) => {
-        state.username = action.meta.arg.username;
-        state.token = action.payload;
+        state.username = action.payload.value.username;
+        state.name = action.payload.value.name;
+        state.email = action.payload.value.email;
+        state.token = action.payload.value.token;
         state.loading = false;
         state.error = "";
         success = true;

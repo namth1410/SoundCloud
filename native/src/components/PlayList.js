@@ -1,22 +1,9 @@
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableHighlight,
-  Button,
-  TouchableOpacity,
-  TouchableOpacityBase,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-} from "react-native";
+import React from "react";
+import { ScrollView, Text, View } from "react-native";
 import Card from "./CardSong";
-import React, { useEffect } from "react";
 
 export default function PlayList({ props }) {
-  const { title, playList, label } = props;
+  const { title, playList } = props;
 
   return (
     <View>
