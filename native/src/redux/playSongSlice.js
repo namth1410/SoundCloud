@@ -1,10 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  id: "",
-  nameSong: "",
-  nameAuthor: "",
-  linkSong: "",
+  infoSong: {},
   playing: false,
   loading: false,
   error: "",
@@ -18,10 +15,7 @@ export const playSongSlice = createSlice({
     playSong: (state, action) => {
       return {
         ...state,
-        id: action.payload.id,
-        nameSong: action.payload.nameSong,
-        nameAuthor: action.payload.nameAuthor,
-        linkSong: action.payload.linkSong,
+        infoSong: { ...action.payload },
         playing: true,
       };
     },

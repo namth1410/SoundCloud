@@ -9,29 +9,44 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
+import { addHistoryAsync } from "../redux/historySlice";
+import { playSong } from "../redux/playSongSlice";
+import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
 
+import { useDispatch, useSelector } from "react-redux";
 export default function ControlSong() {
-  const { playing, pauseSound, continuePlaySound } = useAudio();
+  const { playing, pauseSound, continuePlaySound, playSound } = useAudio();
   const navigation = useNavigation();
   const playSongStore = useSelector((state) => state.playSongRedux);
+  const userInfo = useSelector((state) => state.userInfo);
+  const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
+
+  const dispatch = useDispatch();
   const pauseAction = () => {
     if (playing) {
       pauseSound();
     } else {
       continuePlaySound();
     }
-    // if (playSongStore.playing) {
-    //   dispatch(pauseSong());
-    // } else {
-    //   dispatch(continuePlaySong());
-    // }
   };
 
   const clickControlSong = () => {
-    // dispatch(showModal());
     navigation.navigate("ModalSongV3");
+  };
+
+  const nextSong = () => {
+    playSound({ uri: suggestSongRedux.suggestSongList[0].linkSong });
+    dispatch(
+      addHistoryAsync({
+        ...suggestSongRedux.suggestSongList[0],
+        token: userInfo.token,
+      })
+    );
+    dispatch(playSong(suggestSongRedux.suggestSongList[0]));
+    dispatch(
+      updateDataSuggestSongList(suggestSongRedux.suggestSongList.slice(1))
+    );
   };
 
   const spinValue = new Animated.Value(0);
@@ -71,14 +86,14 @@ export default function ControlSong() {
               ellipsizeMode="tail"
               style={styles.nameSong}
             >
-              {playSongStore.nameSong}
+              {playSongStore.infoSong.nameSong}
             </Text>
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
               style={styles.authorSong}
             >
-              {playSongStore.nameAuthor}
+              {playSongStore.infoSong.nameAuthor}
             </Text>
           </View>
         </TouchableOpacity>
@@ -95,7 +110,7 @@ export default function ControlSong() {
                 <Ionicons name="play-outline" size={40} color="#fff" />
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.control} onPress={() => alert("")}>
+            <TouchableOpacity style={styles.control} onPress={() => nextSong()}>
               <Ionicons
                 name="play-skip-forward-outline"
                 size={40}

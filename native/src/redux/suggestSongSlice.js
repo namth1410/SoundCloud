@@ -19,7 +19,6 @@ export const suggestSongSlice = createSlice({
     },
 
     fakeDataSuggestSongList: (state, action) => {
-      console.log(action.payload);
       return {
         ...state,
         suggestSongList: [...action.payload],

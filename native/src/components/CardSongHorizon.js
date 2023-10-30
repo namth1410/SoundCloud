@@ -1,10 +1,12 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Animated,
   Dimensions,
+  Easing,
   Image,
   Modal,
   PanResponder,
-  SafeAreaView,
   Text,
   ToastAndroid,
   TouchableOpacity,
@@ -14,20 +16,32 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
-import { addHistoryAsync, deleteHistoryAsync } from "../redux/historySlice";
+import { getInfoAuthor } from "../redux/authorSlice";
+import { addHistoryAsync } from "../redux/historySlice";
 import { playSong } from "../redux/playSongSlice";
+import {
+  addSongLike,
+  addSongLikeAsync,
+  deleteSongLike,
+  deleteSongLikeAsync,
+} from "../redux/songLikeSlice";
 
-export default function CardSongForHistory({ props }) {
-  const { id, img, nameSong, nameAuthor, linkSong } = props;
-  const { width, height } = Dimensions.get("window");
-  const songLikeRedux = useSelector((state) => state.songLikeRedux);
-  const userInfoRedux = useSelector((state) => state.userInfo);
-  const playSongStore = useSelector((state) => state.playSongRedux);
-  const { playSound } = useAudio();
-  const dispatch = useDispatch();
-  const [isLiked, setIsLiked] = useState(false);
+import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
+export default function CardSongHorizon({ props }) {
+  const { img, nameSong, nameAuthor, playing, linkSong } = props;
   const [modalVisible, setModalVisible] = useState(false);
+  const { width, height } = Dimensions.get("window");
+  const userInfoRedux = useSelector((state) => state.userInfo);
+  const songLikeRedux = useSelector((state) => state.songLikeRedux);
+  const playSongStore = useSelector((state) => state.playSongRedux);
+  const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
 
+  const [isLiked, setIsLiked] = useState(false);
+
+  const { playSound } = useAudio();
+
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -40,149 +54,179 @@ export default function CardSongForHistory({ props }) {
     })
   ).current;
 
-  const toggeleModal = () => {
-    setModalVisible(!modalVisible);
-  };
-
-  const deleteHistory = async () => {
-    await dispatch(
-      deleteHistoryAsync({ idSong: id, token: userInfoRedux.token })
-    ).then(() => {
-      ToastAndroid.show("Xóa thành công", ToastAndroid.SHORT);
-    });
-  };
-
-  const playSoundAction = async () => {
-    if (nameSong !== playSongStore.infoSong.nameSong) {
-      playSound({ uri: linkSong });
-      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(
-        playSong({
-          id: id,
-          img: "",
-          nameSong: nameSong,
-          nameAuthor: nameAuthor,
-          linkSong: linkSong,
-        })
-      );
-    } else {
+  const handleLike = async () => {
+    try {
+      if (userInfoRedux.token) {
+        if (!isLiked) {
+          setIsLiked(true);
+          dispatch(addSongLike(props));
+          await dispatch(
+            addSongLikeAsync({
+              idSong: props.id,
+              token: userInfoRedux.token,
+            })
+          )
+            .then(() => {
+              setModalVisible(false);
+              ToastAndroid.show("Thêm thành công", ToastAndroid.SHORT);
+            })
+            .catch((error) => {
+              console.error(
+                "Action addSongLike bị từ chối hoặc gặp lỗi:",
+                error
+              );
+              setIsLiked(false);
+            });
+        } else {
+          setIsLiked(false);
+          dispatch(deleteSongLike(props));
+          await dispatch(
+            deleteSongLikeAsync({
+              idSong: props.id,
+              token: userInfoRedux.token,
+            })
+          )
+            .then(() => {
+              setModalVisible(false);
+              ToastAndroid.show("Xóa thành công", ToastAndroid.SHORT);
+            })
+            .catch((error) => {
+              console.error(
+                "Action deleteSongLike bị từ chối hoặc gặp lỗi:",
+                error
+              );
+              setIsLiked(true);
+            });
+        }
+      } else {
+        alert("Chưa đăng nhập");
+        return;
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
+
+  const addSongToQueue = () => {
+    let newSuggestSongList = [...suggestSongRedux.suggestSongList];
+    const existingSongIndex = suggestSongRedux.suggestSongList.findIndex(
+      (song) => song.id === props.id
+    );
+    if (existingSongIndex !== -1) {
+      newSuggestSongList = suggestSongRedux.suggestSongList.filter(
+        (song, index) => index !== existingSongIndex
+      );
+    }
+    newSuggestSongList = [props, ...newSuggestSongList];
+    dispatch(updateDataSuggestSongList(newSuggestSongList));
+    setModalVisible(false);
+  };
+
+  const value = new Animated.Value(0);
 
   useEffect(() => {
-    if (songLikeRedux.songLikeList) {
-      setIsLiked(songLikeRedux.songLikeList.some((item) => item.id === id));
+    if (modalVisible) {
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: 0.6,
+          duration: 200,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      if (songLikeRedux.songLikeList) {
+        setIsLiked(
+          songLikeRedux.songLikeList.some((item) => item.id === props.id)
+        );
+      }
     }
-  }, []);
+  }, [modalVisible]);
+
+  const opacity = value;
 
   return (
-    <SafeAreaView>
-      <TouchableOpacity onPress={() => playSoundAction()}>
+    <View
+      style={{
+        width: "94%",
+        flexDirection: "row",
+        marginHorizontal: 10,
+        paddingLeft: 10,
+        paddingVertical: 5,
+        overflow: "visible",
+        backgroundColor: "#B9B4C7",
+        borderRadius: 5,
+      }}
+    >
+      <TouchableOpacity
+        style={{ flexDirection: "row" }}
+        onPressOut={() => {
+          playSound({ uri: linkSong });
+          dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
+          dispatch(playSong(props));
+        }}
+      >
+        <Image
+          style={{
+            resizeMode: "cover",
+            width: 50,
+            height: 50,
+            borderRadius: 5,
+            zIndex: 2,
+          }}
+          source={img ?? require("../../assets/gai.jpg")}
+        />
         <View
           style={{
-            width: "100%",
-            flexDirection: "row",
-            paddingVertical: 5,
-            marginBottom: 15,
-            overflow: "visible",
-            backgroundColor: "gray",
-            borderRadius: 5,
+            flexDirection: "column",
+            marginLeft: 15,
+            width: 0.65 * width,
           }}
         >
-          <Image
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ fontWeight: "bold" }}
+          >
+            {nameSong}
+          </Text>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
             style={{
-              resizeMode: "cover",
-              width: 50,
-              height: 50,
-              borderRadius: 5,
-              zIndex: 2,
-            }}
-            source={img ?? require("../../assets/gai.jpg")}
-          />
-          <View
-            style={{
-              flexDirection: "column",
-              marginLeft: 15,
-              width: 0.55 * width,
-              backgroundColor: "gray",
+              marginTop: 2,
+              color: "rgba(0, 0, 0, 0.6)",
+              fontSize: 12,
             }}
           >
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={{ fontWeight: "bold" }}
-            >
-              {props.nameSong}
-            </Text>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={{
-                marginTop: 2,
-                color: "rgba(0, 0, 0, 0.6)",
-                fontSize: 12,
-              }}
-            >
-              {nameAuthor}
-            </Text>
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexGrow: 1,
-            }}
-          >
-            <TouchableOpacity style={{ paddingLeft: 10 }}>
-              {isLiked ? (
-                <Ionicons name="heart" color="orange" size={24} />
-              ) : (
-                // <Ionicons name="heart-outline" size={24} />
-                <></>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                toggeleModal();
-              }}
-            >
-              <Ionicons name="ellipsis-vertical-outline" size={24} />
-            </TouchableOpacity>
-            {/* <Menu
-                renderer={Popover}
-                rendererProps={{ placement: "top" }}
-                style={{ width: "auto", height: "auto", borderRadius: 5 }}
-              >
-                <MenuTrigger
-                  style={{ width: "auto", height: "auto" }}
-                  customStyles={{
-                    triggerWrapper: {},
-                  }}
-                >
-                  <Ionicons name="ellipsis-vertical-outline" size={32} />
-                </MenuTrigger>
-                <MenuOptions customStyles={optionsStyles}>
-                  <MenuOption
-                    onSelect={() => {
-                      alert("download");
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Text style={{ paddingRight: 15 }}>Tải xuống</Text>
-                    <Ionicons name="cloud-download-outline" size={32} />
-                  </MenuOption>
-                  <MenuOption onSelect={() => alert(`Save`)} text="Save" />
-                  <MenuOption onSelect={() => alert(`Delete`)} text="Delete" />
-                </MenuOptions>
-              </Menu> */}
-          </View>
+            {nameAuthor}
+          </Text>
         </View>
       </TouchableOpacity>
+
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          flexGrow: 1,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            setModalVisible(true);
+          }}
+        >
+          <Ionicons
+            name="ellipsis-vertical-outline"
+            size={28}
+            color="#000"
+            style={{
+              textAlignVertical: "center",
+            }}
+          />
+        </TouchableOpacity>
+      </View>
+
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -251,7 +295,7 @@ export default function CardSongForHistory({ props }) {
                   borderRadius: 5,
                   zIndex: 2,
                 }}
-                source={img ?? require("../../assets/gai.jpg")}
+                source={require("../../assets/gai.jpg")}
               />
               <View
                 style={{
@@ -310,7 +354,41 @@ export default function CardSongForHistory({ props }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPressOut={() => {
+                  handleLike();
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 10,
+                  }}
+                >
+                  {isLiked ? (
+                    <Ionicons name="heart" color="red" size={30} />
+                  ) : (
+                    <Ionicons name="heart-outline" size={30} />
+                  )}
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: 15,
+                      color: "black",
+                      marginLeft: 15,
+                    }}
+                  >
+                    {isLiked ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPressOut={() => {
+                  addSongToQueue();
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -331,7 +409,7 @@ export default function CardSongForHistory({ props }) {
                       marginLeft: 15,
                     }}
                   >
-                    Thêm vào hàng chờ phát
+                    Xóa khỏi tải lên
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -358,7 +436,16 @@ export default function CardSongForHistory({ props }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  dispatch(
+                    getInfoAuthor({
+                      idUser: props.idUser,
+                    })
+                  );
+                  navigation.navigate("Author");
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -379,49 +466,10 @@ export default function CardSongForHistory({ props }) {
                   </Text>
                 </View>
               </TouchableOpacity>
-
-              <TouchableOpacity onPress={deleteHistory}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 10,
-                  }}
-                >
-                  <Ionicons color="black" name="trash-outline" size={30} />
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      color: "black",
-                      marginLeft: 15,
-                    }}
-                  >
-                    Xóa khỏi danh sách
-                  </Text>
-                </View>
-              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
-
-const optionsStyles = {
-  optionsContainer: {
-    padding: 5,
-    borderRadius: 10,
-  },
-  optionsWrapper: {},
-  optionWrapper: {
-    backgroundColor: "yellow",
-    margin: 5,
-  },
-  optionTouchable: {
-    underlayColor: "green",
-    activeOpacity: 70,
-  },
-  optionText: {},
-};

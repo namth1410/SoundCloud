@@ -27,5 +27,8 @@ namespace backend.Data
         [Required]
         [DefaultValue(0)]
         public int Likes { get; set; }
+
+        [Required]
+        public string Access { get; set; }
     }
 }

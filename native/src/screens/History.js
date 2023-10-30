@@ -1,10 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import {
-  FlatList,
-  Text,
-  View
-} from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import CardSongForHistory from "../components/CardSongForHistory";
@@ -43,7 +39,7 @@ export default function History({}) {
           Lịch sử phát
         </Text>
 
-        <View style={{ backgroundColor: "yellow", padding: 10 }}>
+        <View style={{ padding: 10 }}>
           <FlatList
             data={data}
             onDragEnd={({ data }) => setData(data)}

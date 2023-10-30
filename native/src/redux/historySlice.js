@@ -12,23 +12,7 @@ const initialState = {
 export const historySlice = createSlice({
   name: "history",
   initialState,
-  reducers: {
-    addSongLike: (state, action) => {
-      return {
-        ...state,
-        songLikeList: [...state.songLikeList, action.payload],
-      };
-    },
-
-    deleteSongLike: (state, action) => {
-      return {
-        ...state,
-        songLikeList: state.songLikeList.filter(
-          (item) => item.id !== action.payload.id
-        ),
-      };
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
 

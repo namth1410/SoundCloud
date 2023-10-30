@@ -138,6 +138,7 @@ export const deleteSongLikeAsync = createAsyncThunk(
   "song/deleteSongLike",
   async (info) => {
     try {
+      console.log(info.idSong);
       const config = {
         headers: {
           Authorization: "Bearer " + info.token,

@@ -23,7 +23,7 @@ export default function CardPlaylist({ props }) {
         idPlaylist: props.id,
         token: userInfoRedux.token,
       })
-    ).then((result) => {});
+    ).then(() => {});
     navigation.navigate("PlaylistDetail", { data: props });
   };
 

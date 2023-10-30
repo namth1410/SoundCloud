@@ -1,58 +1,14 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
 import {
   deleteObject,
   getDownloadURL,
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import { ToastAndroid } from "react-native";
 import { storage } from "../api/firebase";
-export const downloadFromUrl = async (infoSong) => {
-  const downloadedSongs = await AsyncStorage.getItem("downloadedSongs");
-  let downloadedSongsArray = [];
-  if (downloadedSongs) {
-    downloadedSongsArray = JSON.parse(downloadedSongs);
-  }
-  const isSongAlreadyDownloaded = downloadedSongsArray.some(
-    (song) => song.linkSong === infoSong.linkSong
-  );
-
-  if (!isSongAlreadyDownloaded) {
-    const downloadResumable = FileSystem.createDownloadResumable(
-      infoSong.linkSong,
-      FileSystem.documentDirectory + infoSong.nameSong,
-      {},
-      (downloadProgress) => {
-        const progress =
-          downloadProgress.totalBytesWritten /
-          downloadProgress.totalBytesExpectedToWrite;
-        console.log(`${progress * 100}%`);
-      }
-    );
-
-    try {
-      const result = await downloadResumable.downloadAsync();
-
-      const downloadedSongs = await getDownloadedSongs(); // Sử dụng await ở đây
-
-      downloadedSongs.push({
-        ...infoSong,
-        urlLocal: result.uri,
-        timestamp: new Date().getTime(),
-      });
-
-      await saveDownloadedSongs(downloadedSongs);
-
-      ToastAndroid.show(`Download done`, ToastAndroid.SHORT);
-    } catch (e) {
-      console.error("Lỗi tải xuống:", e);
-    }
-  } else {
-    console.log(`Bài hát "${infoSong.nameSong}" đã được tải xuống trước đó.`);
-  }
-};
+import * as ImagePicker from "expo-image-picker";
+import { deleteFile, updateFile } from "../redux/uploadSlice";
+import { postSongFromUserAsync } from "../redux/songSlice";
 
 // const save = async (uri, filename, mimetype) => {
 //   if (Platform.OS === "android") {
@@ -81,6 +37,53 @@ export const downloadFromUrl = async (infoSong) => {
 //   }
 // };
 
+export const pickAndConfigureFile = async () => {
+  const result = await DocumentPicker.getDocumentAsync({
+    type: "audio/*",
+  });
+
+  if (result.assets) {
+    let newResult = { ...result };
+    newResult.assets[0].name = newResult.assets[0].name.substring(
+      0,
+      newResult.assets[0].name.length - 4
+    );
+
+    return { ...newResult, access: "public", image: null, progress: 0 };
+  } else {
+    return null;
+  }
+
+  // if (permissions.type === "success") {
+  //   // Lưu thông tin tệp và tùy chọn vào trạng thái ứng dụng
+  //   const selectedFile = permissions;
+  //   // Hiển thị giao diện để cài đặt tùy chọn
+
+  //   // Khi người dùng chọn "Tải lên" sau khi cài đặt tùy chọn
+  //   const uploadResult = await uploadFileToFirebase(selectedFile, customOptions);
+  //   if (uploadResult) {
+  //     // Xử lý khi tải lên thành công
+  //   } else {
+  //     // Xử lý khi có lỗi khi tải lên
+  //   }
+  // }
+};
+
+export const pickImage = async () => {
+  // No permissions request is necessary for launching the image library
+  let result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.All,
+    allowsEditing: true,
+    // aspect: [4, 3],
+    quality: 1,
+  });
+  if (result.assets) {
+    return result;
+  } else {
+    return null;
+  }
+};
+
 export const uploadFileToFirebase = async () => {
   if (Platform.OS === "android") {
     try {
@@ -106,6 +109,22 @@ export const uploadFileToFirebase = async () => {
               const progress =
                 (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
               console.log(`Progress: ${progress}%`);
+              if (taskSnapshot.bytesTransferred === taskSnapshot.totalBytes) {
+                const _storageRef = ref(
+                  storage,
+                  `Stuff/${permissions.assets[0].name}`
+                );
+                setTimeout(() => {
+                  getDownloadURL(_storageRef)
+                    .then((url) => {
+                      console.log("URL của tệp:", url);
+                      // Ở đây, bạn có thể sử dụng biến `url` để thực hiện công việc cần thiết với URL của tệp.
+                    })
+                    .catch((error) => {
+                      console.error("Lỗi khi lấy URL:", error);
+                    });
+                }, 2000);
+              }
               if (taskSnapshot.state === "success") {
                 resolve();
               }
@@ -153,6 +172,215 @@ export const uploadFileToFirebase = async () => {
     return null;
   }
 };
+export const uploadFileToFirebaseV2 = async (item) => {
+  if (Platform.OS === "android") {
+    try {
+      const storageRef = ref(storage, `Stuff/${item.assets[0].name}`);
+      const response = await fetch(item.assets[0].uri);
+      const blob = await response.blob();
+
+      const snapshot = uploadBytesResumable(storageRef, blob, {
+        contentType: "audio/mpeg", // Ví dụ: "audio/mpeg" cho file MP3
+      });
+
+      const audioUploadProgress = new Promise((resolve) => {
+        snapshot.on("state_changed", (taskSnapshot) => {
+          const progress =
+            (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+          console.log(`Audio Progress: ${progress}%`);
+          if (taskSnapshot.state === "success") {
+            resolve();
+          }
+        });
+      });
+
+      const uploadPromises = [audioUploadProgress];
+      let imageSnapshot = null;
+
+      if (item.image) {
+        const imageTypes = {
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          png: "image/png",
+          gif: "image/gif",
+        };
+
+        // Xác định loại MIME dựa trên phần mở rộng của tệp ảnh (ví dụ: jpg, png)
+        const imageExtension = item.image.split(".").pop().toLowerCase();
+        const contentType = imageTypes[imageExtension];
+
+        if (!contentType) {
+          console.error("Loại ảnh không được hỗ trợ");
+          return null;
+        }
+
+        const imageStorageRef = ref(storage, `Image/${item.assets[0].name}`);
+        const imageResponse = await fetch(item.image);
+        const imageBlob = await imageResponse.blob();
+
+        imageSnapshot = uploadBytesResumable(imageStorageRef, imageBlob, {
+          contentType: contentType, // Thay đổi contentType cho phù hợp với loại ảnh
+        });
+
+        const imageUploadProgress = new Promise((resolve) => {
+          imageSnapshot.on("state_changed", (taskSnapshot) => {
+            const progress =
+              (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+            console.log(`Image Progress: ${progress}%`);
+            if (taskSnapshot.state === "success") {
+              resolve();
+            }
+          });
+        });
+        uploadPromises.push(imageUploadProgress);
+      }
+
+      // Đợi cả hai tải lên hoàn thành
+      await Promise.all(uploadPromises).then((response) => {
+        console.log("done");
+      });
+
+      const audioDownloadURL = await getDownloadURL(snapshot.ref);
+      let imageDownloadURL = null;
+
+      if (item.image) {
+        imageDownloadURL = await getDownloadURL(imageSnapshot.ref);
+      }
+
+      console.log(audioDownloadURL);
+      console.log(imageDownloadURL);
+
+      return { audioURL: audioDownloadURL, imageURL: imageDownloadURL };
+    } catch (error) {
+      console.error("Lỗi khi tải lên tệp:", error);
+      return null;
+    }
+  } else {
+    // Xử lý trên các nền tảng khác
+    return null;
+  }
+};
+
+export const uploadFileToFirebaseV3 = async (item, dispatch, token) => {
+  if (Platform.OS === "android") {
+    try {
+      let audioDownloadURL = null;
+      let imageDownloadURL = null;
+      if (item.image) {
+        const imageTypes = {
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          png: "image/png",
+          gif: "image/gif",
+        };
+
+        // Xác định loại MIME dựa trên phần mở rộng của tệp ảnh (ví dụ: jpg, png)
+        const imageExtension = item.image.split(".").pop().toLowerCase();
+        const contentType = imageTypes[imageExtension];
+
+        if (!contentType) {
+          console.error("Loại ảnh không được hỗ trợ");
+          return null;
+        }
+
+        const imageStorageRef = ref(storage, `Image/${item.assets[0].name}`);
+        const imageResponse = await fetch(item.image);
+        const imageBlob = await imageResponse.blob();
+
+        imageSnapshot = uploadBytesResumable(imageStorageRef, imageBlob, {
+          contentType: contentType, // Thay đổi contentType cho phù hợp với loại ảnh
+        });
+
+        const trackUploadProgress = async () => {
+          return new Promise((resolve) => {
+            imageSnapshot.on("state_changed", (taskSnapshot) => {
+              const progress =
+                (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+              console.log(`ProgressImage: ${progress}%`);
+              if (taskSnapshot.bytesTransferred === taskSnapshot.totalBytes) {
+                const _storageRef = ref(
+                  storage,
+                  `Image/${item.assets[0].name}`
+                );
+                setTimeout(() => {
+                  getDownloadURL(_storageRef)
+                    .then((url) => {
+                      console.log("URL của image:", url);
+                      imageDownloadURL = url;
+                      resolve(url);
+
+                      // Ở đây, bạn có thể sử dụng biến `url` để thực hiện công việc cần thiết với URL của tệp.
+                    })
+                    .catch((error) => {
+                      console.error("Lỗi khi lấy URL:", error);
+                    });
+                }, 2000);
+              }
+            });
+          });
+        };
+
+        await trackUploadProgress();
+      }
+
+      const storageRef = ref(storage, `Stuff/${item.assets[0].name}`);
+      const response = await fetch(item.assets[0].uri);
+      const blob = await response.blob();
+
+      const snapshot = uploadBytesResumable(storageRef, blob, {
+        contentType: "audio/mpeg", // Ví dụ: "audio/mpeg" cho file MP3
+      });
+
+      const audioUploadProgress = async () => {
+        return new Promise((resolve) => {
+          snapshot.on("state_changed", (taskSnapshot) => {
+            const progress =
+              (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+            console.log(`Progress: ${progress}%`);
+            dispatch(updateFile({ ...item, progress: progress }));
+            if (taskSnapshot.bytesTransferred === taskSnapshot.totalBytes) {
+              const _storageRef = ref(storage, `Stuff/${item.assets[0].name}`);
+              dispatch(deleteFile(item));
+              setTimeout(() => {
+                getDownloadURL(_storageRef)
+                  .then((url) => {
+                    console.log("URL của tệp:", url);
+                    console.log(item);
+                    console.log(imageDownloadURL);
+                    resolve(url);
+                    dispatch(
+                      postSongFromUserAsync({
+                        nameSong: item.assets[0].name,
+                        linkSong: url,
+                        image: imageDownloadURL ? imageDownloadURL : "null",
+                        access: item.access,
+                        token: token,
+                      })
+                    );
+                    return {
+                      audioURL: audioDownloadURL,
+                      imageURL: imageDownloadURL,
+                    };
+                    // Ở đây, bạn có thể sử dụng biến `url` để thực hiện công việc cần thiết với URL của tệp.
+                  })
+                  .catch((error) => {
+                    console.error("Lỗi khi lấy URL:", error);
+                  });
+              }, 2000);
+            }
+          });
+        });
+      };
+      audioUploadProgress();
+    } catch (error) {
+      console.error("Lỗi khi tải lên tệp:", error);
+      return null;
+    }
+  } else {
+    // Xử lý trên các nền tảng khác
+    return null;
+  }
+};
 
 export const deleteFileToFirebase = async (fileLocation) => {
   try {
@@ -167,48 +395,5 @@ export const deleteFileToFirebase = async (fileLocation) => {
   } catch (error) {
     console.error("Lỗi khi xóa tệp tin:", error);
     return false;
-  }
-};
-
-// Hàm để lưu danh sách bài hát đã tải về
-const saveDownloadedSongs = async (songs) => {
-  try {
-    await AsyncStorage.setItem("downloadedSongs", JSON.stringify(songs));
-  } catch (error) {
-    console.error("Lỗi khi lưu danh sách bài hát đã tải về:", error);
-  }
-};
-
-// Hàm để lấy danh sách bài hát đã tải về
-const getDownloadedSongs = async () => {
-  try {
-    const value = await AsyncStorage.getItem("downloadedSongs");
-    return value ? JSON.parse(value) : [];
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách bài hát đã tải về:", error);
-    return [];
-  }
-};
-
-export const removeSong = async (songToDelete) => {
-  try {
-    // Bước 1: Lấy danh sách bài hát đã tải về từ AsyncStorage
-    const downloadedSongs = await getDownloadedSongs();
-
-    // Bước 2: Tìm và xóa bài hát cụ thể khỏi danh sách
-    const updatedSongs = downloadedSongs.filter(
-      (song) => song.linkSong !== songToDelete.linkSong
-    );
-
-    // Bước 3: Lưu danh sách bài hát đã cập nhật lại vào AsyncStorage
-    await saveDownloadedSongs(updatedSongs);
-
-    ToastAndroid.show(`Xóa thành công`, ToastAndroid.SHORT);
-
-    // Trả về danh sách bài hát đã cập nhật (tùy theo yêu cầu của bạn)
-    return updatedSongs;
-  } catch (error) {
-    console.error("Lỗi khi xóa bài hát đã tải về:", error);
-    return null;
   }
 };

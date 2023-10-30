@@ -1,37 +1,65 @@
 import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  FlatList,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
-const Option = ({ title }) => {
-  return (
-    <TouchableOpacity>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingLeft: 12,
-          paddingRight: 12,
-          paddingTop: 5,
-          paddingBottom: 5,
-          marginBottom: 5,
-        }}
-      >
-        <Text style={{ fontSize: 15 }}>{title}</Text>
-        <Ionicons
-          name="chevron-forward-outline"
-          size={30}
-          color="#F57C1F"
-          style={{ justifyContent: "flex-end" }}
-        />
-      </View>
-    </TouchableOpacity>
-  );
-};
+import LottieView from "lottie-react-native";
+import {
+  pickAndConfigureFile,
+  uploadFileToFirebase,
+  uploadFileToFirebaseV2,
+  uploadFileToFirebaseV3,
+} from "../ultis/FileHelper";
+import CardUpload from "../components/CardUpload";
+import { useDispatch, useSelector } from "react-redux";
+import { addFile, setUploading } from "../redux/uploadSlice";
 
 export default function UploadFromUser({ navigation }) {
+  const dispatch = useDispatch();
+  const uploadRedux = useSelector((state) => state.uploadRedux);
+  const userInfoRedux = useSelector((state) => state.userInfo);
+  const lottieUploadRef = useRef(null);
+  const [fileUpload, setFileUpload] = useState(null);
+  const [data, setData] = useState(uploadRedux.uploadFiles);
+
+  const renderItem = ({ item }) => {
+    return (
+      <View style={{ marginBottom: 10 }}>
+        <CardUpload props={{ ...item }}></CardUpload>
+      </View>
+    );
+  };
+
+  const handleUploadFromDevice = async () => {
+    const a = await pickAndConfigureFile();
+    if (a) {
+      dispatch(addFile(a));
+    }
+  };
+
+  const uploadFiletoDatabase = async () => {
+    dispatch(setUploading(true));
+    for (let i = data.length - 1; i >= 0; i--) {
+      uploadFileToFirebaseV3(data[i], dispatch, userInfoRedux.token);
+    }
+
+    // await uploadFileToFirebaseV2(data[0]);
+    console.log("xong ham");
+  };
+
+  useEffect(() => {
+    setData(uploadRedux.uploadFiles);
+  }, [uploadRedux]);
+
+  useEffect(() => {
+    lottieUploadRef.current.play();
+  }, []);
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View
@@ -51,14 +79,85 @@ export default function UploadFromUser({ navigation }) {
             paddingBottom: 12,
           }}
         >
-          Cloud
+          Upload và phát hành
         </Text>
 
-        <View style={{ backgroundColor: "yellow", padding: 10 }}>
-          <ScrollView>
-            <Option title="Tracks yêu thích"></Option>
-            <Option title="Tracks yêu thích"></Option>
-          </ScrollView>
+        <View style={{ padding: 10, alignItems: "center" }}>
+          <TouchableOpacity
+            onPressOut={() => {
+              handleUploadFromDevice();
+            }}
+            style={{
+              width: "95%",
+              height: 150,
+              borderRadius: 10,
+              backgroundColor: "#E7CBCB",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <LottieView
+              style={{
+                width: 100,
+                height: 100,
+                transform: [{ translateY: -5 }],
+              }}
+              ref={lottieUploadRef}
+              source={require("../../assets/upload.json")}
+              renderMode={"SOFTWARE"}
+              loop={true}
+            />
+            <Text
+              style={{ color: "#00B6FF", fontWeight: "bold", fontSize: 16 }}
+            >
+              Click để chọn file
+            </Text>
+          </TouchableOpacity>
+
+          <View
+            style={{
+              width: "auto",
+              height: "auto",
+              borderRadius: 10,
+              backgroundColor: "#A0E9FF",
+              marginTop: 15,
+              alignItems: "center",
+              display: data.length > 0 ? "flex" : "none",
+            }}
+          >
+            <TouchableOpacity
+              onPressOut={() => {
+                uploadFiletoDatabase();
+              }}
+            >
+              <Text style={{ fontWeight: "bold", fontSize: 16, padding: 10 }}>
+                Upload
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              width: "95%",
+              height: "auto",
+              maxHeight: 300,
+              borderRadius: 10,
+              backgroundColor: "#E7CBCB",
+              marginTop: 15,
+              display: data.length > 0 ? "flex" : "none",
+            }}
+          >
+            <Text style={{ fontWeight: "bold", fontSize: 16, padding: 5 }}>
+              Chuẩn bị tải lên
+            </Text>
+            <FlatList
+              data={data}
+              onDragEnd={({ data }) => setData(data)}
+              keyExtractor={(item) => item.assets[0].uri}
+              renderItem={renderItem}
+              style={{ paddingHorizontal: 0, marginTop: 10 }}
+            />
+          </View>
         </View>
       </View>
     </SafeAreaView>

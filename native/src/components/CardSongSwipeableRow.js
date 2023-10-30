@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Animated,
   Image,
@@ -21,11 +21,8 @@ const CardSongSwipeableRow = ({ props }) => {
   const dispatch = useDispatch();
   const { playSound } = useAudio();
 
-  useEffect(() => {
-    console.log(props);
-  }, []);
   const playSoundAction = async () => {
-    if (nameSong !== playSongStore.nameSong) {
+    if (nameSong !== playSongStore.infoSong.nameSong) {
       playSound({ uri: linkSong });
       dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
       dispatch(
@@ -141,7 +138,7 @@ const CardSongSwipeableRow = ({ props }) => {
           </View>
         </TouchableOpacity>
         <Ionicons
-          name="ellipsis-vertical-outline"
+          name="reorder-three-outline"
           size={28}
           color="#F57C1F"
           style={{
