@@ -11,18 +11,10 @@ export default function Card({ props }) {
   const dispatch = useDispatch();
   const { playSound } = useAudio();
   const playSoundAction = async () => {
-    if (nameSong !== playSongStore.nameSong) {
+    if (nameSong !== playSongStore.infoSong.nameSong) {
       playSound({ uri: linkSong });
       dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(
-        playSong({
-          id: id,
-          img: "",
-          nameSong: nameSong,
-          nameAuthor: nameAuthor,
-          linkSong: linkSong,
-        })
-      );
+      dispatch(playSong(props));
     } else {
     }
   };

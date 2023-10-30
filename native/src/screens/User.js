@@ -1,17 +1,24 @@
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  Dimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { postSongFromUserAsync } from "../redux/songSlice";
-import { downloadFromUrl, uploadFileToFirebase } from "../ultis/FileHelper";
+import { uploadFileToFirebase } from "../ultis/FileHelper";
 export default function User({}) {
   const userInfo = useSelector((state) => state.userInfo);
   const allSongRedux = useSelector((state) => state.allSong);
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const { width, height } = Dimensions.get("window");
 
   const testUpload = async () => {
     if (userInfo.token) {
@@ -41,6 +48,7 @@ export default function User({}) {
       <View
         style={{
           backgroundColor: "white",
+          width: width,
           flex: 1,
         }}
       >
@@ -82,14 +90,169 @@ export default function User({}) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView>
-          <TouchableOpacity
+        <ScrollView
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            width: width,
+          }}
+        >
+          <View
+            style={{
+              width: width,
+              height: 0.4 * width,
+              flexDirection: "row",
+              justifyContent: "space-around",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("UploadFromUser");
+              }}
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="cloud-upload" color="#00B6FF" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "#00B6FF" }}>
+                Tải lên
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="heart" color="#00B6FF" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "#00B6FF" }}>
+                Yêu thích
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              width: width,
+              height: 0.4 * width,
+              flexDirection: "row",
+              justifyContent: "space-around",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="settings" color="grey" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "grey" }}>Cài đặt</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              width: width,
+              height: 0.4 * width,
+              flexDirection: "row",
+              justifyContent: "space-around",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("History");
+              }}
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="cloud-upload" color="#00B6FF" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "#00B6FF" }}>
+                Nghe gần đây
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("Playlist");
+              }}
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="heart" color="#00B6FF" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "#00B6FF" }}>
+                Playlist
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              width: width,
+              height: 0.4 * width,
+              flexDirection: "row",
+              justifyContent: "space-around",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("ManageStorage");
+              }}
+              style={{
+                width: 0.35 * width,
+                aspectRatio: 1,
+                backgroundColor: "#E7CBCB",
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="arrow-down-circle" color="grey" size={26} />
+
+              <Text style={{ fontWeight: "bold", color: "grey" }}>Đã tải</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* <TouchableOpacity
             onPress={() => {
               navigation.navigate("UploadFromUser");
             }}
           >
             <Option title="Danh sách nhạc đã tải lên"></Option>
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => {
               navigation.navigate("History");
@@ -97,6 +260,7 @@ export default function User({}) {
           >
             <Option title="Lịch sử"></Option>
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => {
               navigation.navigate("ManageStorage");
@@ -111,19 +275,7 @@ export default function User({}) {
             }}
           >
             <Option title="Playlist"></Option>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              downloadFromUrl(allSongRedux.songs[7]);
-              // playSound({
-              //   uri: `file:///data/user/0/host.exp.exponent/files/SoundCloud_C%C3%A1nh%20thi%E1%BB%87p%20%C4%91%E1%BA%A7u%20xu%C3%A2n`,
-              // });
-            }}
-          >
-            <Option title="Test DownLoad"></Option>
-          </TouchableOpacity>
-          <Option title="Tracks yêu thích"></Option>
+          </TouchableOpacity> */}
         </ScrollView>
       </View>
     </SafeAreaView>

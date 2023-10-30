@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Dimensions,
   FlatList,
@@ -14,13 +14,15 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import CardSongForStorage from "../components/CardSongForStorage";
 import { Updated } from "../redux/storageSlice";
+import LottieView from "lottie-react-native";
 
 export default function ManageStorage({}) {
   const [data, setData] = useState();
   const { width } = Dimensions.get("window");
   const dispatch = useDispatch();
   const storageRedux = useSelector((state) => state.storageRedux);
-
+  const lottieEmptyRef = useRef(null);
+  const [isEmpty, setIsEmpty] = useState(false);
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("new");
   const [items, setItems] = useState([
@@ -32,9 +34,9 @@ export default function ManageStorage({}) {
   const getDownloadedSongs = async (typeOrder) => {
     try {
       const downloadedSongs = await AsyncStorage.getItem("downloadedSongs");
-      if (downloadedSongs) {
-        const parsedDownloadedSongs = JSON.parse(downloadedSongs);
-
+      const parsedDownloadedSongs = JSON.parse(downloadedSongs);
+      if (parsedDownloadedSongs.length > 0) {
+        setIsEmpty(false);
         switch (typeOrder) {
           case "new":
             // Sắp xếp theo thời gian mới nhất
@@ -61,6 +63,8 @@ export default function ManageStorage({}) {
         }
 
         setData(parsedDownloadedSongs);
+      } else {
+        setIsEmpty(true);
       }
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu từ AsyncStorage:", error);
@@ -71,18 +75,14 @@ export default function ManageStorage({}) {
   }, [value]);
 
   useEffect(() => {
-    if (storageRedux.isChanged) {
-      getDownloadedSongs();
-      dispatch(Updated());
-    }
+    getDownloadedSongs();
   }, [storageRedux]);
 
   useEffect(() => {
-    if (storageRedux.isChanged) {
-      getDownloadedSongs();
-      dispatch(Updated());
+    if (isEmpty && lottieEmptyRef) {
+      lottieEmptyRef.current.play();
     }
-  }, [storageRedux]);
+  }, [isEmpty]);
 
   const renderItem = ({ item }) => {
     return <CardSongForStorage props={{ ...item }}></CardSongForStorage>;
@@ -120,96 +120,122 @@ export default function ManageStorage({}) {
           </Text>
         </View>
 
-        <View style={{ alignItems: "center", marginTop: 20 }}>
-          <TouchableOpacity>
-            <Text
-              style={{
-                padding: 5,
-                textAlign: "center",
-                backgroundColor: "#F57C1F",
-                color: "white",
-                borderRadius: 100,
-                width: 0.6 * width,
-                fontWeight: "bold",
-                fontSize: 18,
-              }}
-            >
-              Phát ngẫu nhiên
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View
-          style={{
-            alignItems: "flex-end",
-            flexDirection: "row-reverse",
-            zIndex: 2,
-          }}
-        >
-          {/* <Menu
-            renderer={Popover}
-            rendererProps={{ placement: "top" }}
-            style={{ width: "auto", height: "auto", borderRadius: 5 }}
-          >
-            <MenuTrigger
-              style={{ width: "auto", height: "auto" }}
-              customStyles={{
-                triggerWrapper: {},
-              }}
-            >
-              <Ionicons name="ellipsis-vertical-outline" size={32} />
-            </MenuTrigger>
-            <MenuOptions customStyles={optionsStyles}>
-              <MenuOption
-                onSelect={() => {
-                  alert("download");
-                }}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ paddingRight: 15 }}>Tải xuống</Text>
-                <Ionicons name="cloud-download-outline" size={32} />
-              </MenuOption>
-              <MenuOption onSelect={() => alert(`Save`)} text="Save" />
-              <MenuOption onSelect={() => alert(`Delete`)} text="Delete" />
-            </MenuOptions>
-          </Menu> */}
+        {isEmpty ? (
           <View
             style={{
-              width: 130,
-              borderRadius: 0,
-              borderWidth: 0,
-              alignItems: "flex-end",
-              marginRight: 10,
+              width: "100%",
+              height: "100%",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <DropDownPicker
+            <LottieView
               style={{
-                borderRadius: 0,
-                borderWidth: 0,
+                width: 200,
+                height: 200,
+                transform: [{ translateY: -50 }],
               }}
-              mode="BADGE"
-              open={open}
-              value={value}
-              items={items}
-              setOpen={setOpen}
-              setValue={setValue}
-              setItems={setItems}
+              ref={lottieEmptyRef}
+              source={require("../../assets/empty.json")}
+              renderMode={"SOFTWARE"}
+              loop={true}
             />
           </View>
-        </View>
+        ) : (
+          <>
+            <View style={{ alignItems: "center", marginTop: 20 }}>
+              <TouchableOpacity>
+                <Text
+                  style={{
+                    padding: 5,
+                    textAlign: "center",
+                    backgroundColor: "#F57C1F",
+                    color: "white",
+                    borderRadius: 100,
+                    width: 0.6 * width,
+                    fontWeight: "bold",
+                    fontSize: 18,
+                  }}
+                >
+                  Phát ngẫu nhiên
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View>
+              <View
+                style={{
+                  alignItems: "flex-end",
+                  flexDirection: "row-reverse",
+                  zIndex: 2,
+                }}
+              >
+                {/* <Menu
+                renderer={Popover}
+                rendererProps={{ placement: "top" }}
+                style={{ width: "auto", height: "auto", borderRadius: 5 }}
+              >
+                <MenuTrigger
+                  style={{ width: "auto", height: "auto" }}
+                  customStyles={{
+                    triggerWrapper: {},
+                  }}
+                >
+                  <Ionicons name="ellipsis-vertical-outline" size={32} />
+                </MenuTrigger>
+                <MenuOptions customStyles={optionsStyles}>
+                  <MenuOption
+                    onSelect={() => {
+                      alert("download");
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text style={{ paddingRight: 15 }}>Tải xuống</Text>
+                    <Ionicons name="cloud-download-outline" size={32} />
+                  </MenuOption>
+                  <MenuOption onSelect={() => alert(`Save`)} text="Save" />
+                  <MenuOption onSelect={() => alert(`Delete`)} text="Delete" />
+                </MenuOptions>
+              </Menu> */}
+                <View
+                  style={{
+                    width: 130,
+                    borderRadius: 0,
+                    borderWidth: 0,
+                    alignItems: "flex-end",
+                    marginRight: 10,
+                  }}
+                >
+                  <DropDownPicker
+                    style={{
+                      borderRadius: 0,
+                      borderWidth: 0,
+                    }}
+                    mode="BADGE"
+                    open={open}
+                    value={value}
+                    items={items}
+                    setOpen={setOpen}
+                    setValue={setValue}
+                    setItems={setItems}
+                  />
+                </View>
+              </View>
 
-        <View style={{ backgroundColor: "yellow", padding: 10 }}>
-          <FlatList
-            data={data}
-            onDragEnd={({ data }) => setData(data)}
-            keyExtractor={(item) => item.linkSong}
-            renderItem={renderItem}
-            style={{ paddingHorizontal: 0 }}
-          />
-        </View>
+              <View style={{ padding: 10 }}>
+                <FlatList
+                  data={data}
+                  onDragEnd={({ data }) => setData(data)}
+                  keyExtractor={(item) => item.linkSong}
+                  renderItem={renderItem}
+                  style={{ paddingHorizontal: 0 }}
+                />
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );

@@ -11,19 +11,21 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSelector } from "react-redux";
+import { useAudio } from "../common/AudioProvider";
 import SuggestSongList from "../components/SuggestSongList";
 
 export default function Suggest({ navigation }) {
   const playSongStore = useSelector((state) => state.playSongRedux);
   const { width, height } = Dimensions.get("window");
   const lottieRef = useRef(null);
+  const audio = useAudio();
   useEffect(() => {
-    if (playSongStore.playing) {
+    if (audio.playing) {
       lottieRef.current.play();
     } else {
       lottieRef.current.pause();
     }
-  }, [playSongStore.playing]);
+  }, [audio.playing]);
 
   return (
     <SafeAreaView>
@@ -93,7 +95,7 @@ export default function Suggest({ navigation }) {
               ellipsizeMode="tail"
               style={{ fontWeight: "bold" }}
             >
-              {playSongStore.nameSong}
+              {playSongStore.infoSong.nameSong}
             </Text>
             <Text
               numberOfLines={1}
@@ -104,7 +106,7 @@ export default function Suggest({ navigation }) {
                 fontSize: 12,
               }}
             >
-              {playSongStore.nameAuthor}
+              {playSongStore.infoSong.nameAuthor}
             </Text>
           </View>
           <View

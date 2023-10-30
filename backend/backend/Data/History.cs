@@ -20,5 +20,8 @@ namespace backend.Data
 
         [ForeignKey("IdSong")]
         public Song Song { get; set; }
+
+        [Required]
+        public DateTime CreatedAt { get; set; }
     }
 }

@@ -14,7 +14,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
-import { addHistoryAsync, deleteHistoryAsync } from "../redux/historySlice";
+import { addHistoryAsync } from "../redux/historySlice";
 import { playSong } from "../redux/playSongSlice";
 import { deleteSongPlaylistAsync } from "../redux/playlistDetailSlice";
 
@@ -42,7 +42,7 @@ export default function CardSongForPlaylist({ props }) {
     })
   ).current;
 
-  const toggeleModal = () => {
+  const toggleModal = () => {
     setModalVisible(!modalVisible);
   };
 
@@ -59,7 +59,7 @@ export default function CardSongForPlaylist({ props }) {
   };
 
   const playSoundAction = async () => {
-    if (nameSong !== playSongStore.nameSong) {
+    if (nameSong !== playSongStore.infoSong.nameSong) {
       playSound({ uri: linkSong });
       dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
       dispatch(
@@ -151,7 +151,7 @@ export default function CardSongForPlaylist({ props }) {
 
             <TouchableOpacity
               onPress={() => {
-                toggeleModal();
+                toggleModal();
               }}
             >
               <Ionicons name="ellipsis-vertical-outline" size={24} />

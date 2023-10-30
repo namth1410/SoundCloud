@@ -221,6 +221,9 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("IdSong")
                         .HasColumnType("int");
 
@@ -291,6 +294,10 @@ namespace backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    b.Property<string>("Access")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("IdUser")
                         .HasColumnType("longtext");

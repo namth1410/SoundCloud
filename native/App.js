@@ -12,6 +12,7 @@ import { AudioProvider } from "./src/common/AudioProvider";
 import ControlSong from "./src/components/ControlSong";
 import ModalSongV3 from "./src/components/ModalSongV3";
 import { store } from "./src/redux/store";
+import Author from "./src/screens/Author";
 import Feed from "./src/screens/Feed";
 import History from "./src/screens/History";
 import Home from "./src/screens/Home";
@@ -21,6 +22,7 @@ import PlaylistDetail from "./src/screens/PlaylistDetail";
 import Search from "./src/screens/Search";
 import SignIn from "./src/screens/SignIn";
 import SignUp from "./src/screens/SignUp";
+import SongAuthor from "./src/screens/SongAuthor";
 import Suggest from "./src/screens/Suggest";
 import UploadFromUser from "./src/screens/UploadFromUser";
 import User from "./src/screens/User";
@@ -39,6 +41,9 @@ function UserCombine() {
       <Stack.Screen name="History" component={History} />
       <Stack.Screen name="ManageStorage" component={ManageStorage} />
       <Stack.Screen name="Playlist" component={Playlist} />
+      <Stack.Screen name="Author" component={Author} />
+      <Stack.Screen name="SongAuthor" component={SongAuthor} />
+
       <Stack.Screen
         options={{
           presentation: "modal",
@@ -48,6 +53,41 @@ function UserCombine() {
         name="PlaylistDetail"
         component={PlaylistDetail}
       />
+    </Stack.Navigator>
+  );
+}
+
+function HomeCombine() {
+  return (
+    <Stack.Navigator
+      initialRouteName="Home"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="Author" component={Author} />
+      <Stack.Screen name="SongAuthor" component={SongAuthor} />
+    </Stack.Navigator>
+  );
+}
+
+function FeedCombine() {
+  return (
+    <Stack.Navigator
+      initialRouteName="Feed"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Feed" component={Feed} />
+    </Stack.Navigator>
+  );
+}
+
+function SearchCombine() {
+  return (
+    <Stack.Navigator
+      initialRouteName="Search"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Search" component={Search} />
     </Stack.Navigator>
   );
 }
@@ -106,13 +146,13 @@ function SoundCloudTabs() {
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
 
-            if (route.name === "Home") {
+            if (route.name === "Nhà") {
               iconName = focused ? "home" : "home-outline";
-            } else if (route.name === "Feed") {
+            } else if (route.name === "FeedCombine") {
               iconName = focused ? "ios-list" : "ios-list-outline";
-            } else if (route.name === "Search") {
+            } else if (route.name === "Tìm kiếm") {
               iconName = focused ? "search" : "search-outline";
-            } else if (route.name === "UserCombine") {
+            } else if (route.name === "Cá nhân") {
               iconName = focused ? "person-circle" : "person-circle-outline";
             }
 
@@ -121,19 +161,16 @@ function SoundCloudTabs() {
           tabBarActiveTintColor: "tomato",
           tabBarInactiveTintColor: "gray",
           headerShown: false,
+          tabBarHideOnKeyboard: true,
         })}
       >
-        <Tab.Screen name="Home" component={Home} />
-        <Tab.Screen name="Feed" component={Feed} />
-        <Tab.Screen name="Search" component={Search} />
-        <Tab.Screen name="UserCombine" component={UserCombine} />
+        <Tab.Screen name="Nhà" component={HomeCombine} />
+        <Tab.Screen name="FeedCombine" component={FeedCombine} />
+        <Tab.Screen name="Tìm kiếm" component={SearchCombine} />
+        <Tab.Screen name="Cá nhân" component={UserCombine} />
       </Tab.Navigator>
-      {/* <Song></Song> */}
-      {/**
 
-        */}
-      {playSongStore.nameSong ? <ControlSong></ControlSong> : <></>}
-      {/* {false ? <ControlSong></ControlSong> : <></>} */}
+      {playSongStore.infoSong.nameSong ? <ControlSong></ControlSong> : <></>}
     </SafeAreaView>
   );
 }

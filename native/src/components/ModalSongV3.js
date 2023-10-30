@@ -1,7 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import LottieView from "lottie-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  FlatList,
   Image,
   Modal,
   PanResponder,
@@ -9,43 +12,55 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  FlatList,
-  KeyboardAvoidingView,
-  ToastAndroid,
-  Platform,
+  Animated,
+  Easing,
 } from "react-native";
 import { State, TapGestureHandler } from "react-native-gesture-handler";
-import { renderers } from "react-native-popup-menu";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
+import { getInfoAuthor } from "../redux/authorSlice";
 import { PLAY_MODE, setPlayMode } from "../redux/configAudioSlice";
-import { continuePlaySong, pauseSong } from "../redux/playSongSlice";
+import { addHistoryAsync } from "../redux/historySlice";
+import { continuePlaySong, pauseSong, playSong } from "../redux/playSongSlice";
+import { postSongPlaylistAsync } from "../redux/playlistDetailSlice";
+import { addPlaylistAsync } from "../redux/playlistSlice";
 import {
   addSongLike,
   addSongLikeAsync,
   deleteSongLike,
   deleteSongLikeAsync,
 } from "../redux/songLikeSlice";
+import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
 import MySlider from "./MySlider";
-import CardPlaylist from "../components/CardPlaylist";
-import { postSongPlaylistAsync } from "../redux/playlistDetailSlice";
+import { addQueue, updateStorage } from "../redux/storageSlice";
 
 export default function ModalSongV3({ navigation }) {
   const playSongStore = useSelector((state) => state.playSongRedux);
   const userInfo = useSelector((state) => state.userInfo);
   const songLikeRedux = useSelector((state) => state.songLikeRedux);
   const playlistRedux = useSelector((state) => state.playlistRedux);
+  const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
+  const historyRedux = useSelector((state) => state.historyRedux);
+  const storageRedux = useSelector((state) => state.storageRedux);
 
   const configAudio = useSelector((state) => state.configAudio);
   const [isLiked, setIsLiked] = useState(false);
   const dispatch = useDispatch();
   const lottieRef = useRef(null);
   const [data, setData] = useState(playlistRedux.playlistList);
-  const { playing, curTime, pauseSound, continuePlaySound } = useAudio();
+  const {
+    playing,
+    curTime,
+    pauseSound,
+    continuePlaySound,
+    playSound,
+    downloadFromUrl,
+  } = useAudio();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalEditPlaylistVisible, setModalEditPlaylistVisible] =
     useState(false);
@@ -53,12 +68,17 @@ export default function ModalSongV3({ navigation }) {
     useState(false);
   const textInputRef = useRef(null);
   const [textInputValue, setTextInputValue] = useState("");
+  const [isDownloading, setIsDownloading] = useState("false");
 
   const [sliderValue, setSliderValue] = useState(10);
-  const { Popover } = renderers;
   const doubleTapRef = useRef(null);
   const [showLottie, setShowLottie] = useState(false);
   const { width, height } = Dimensions.get("window");
+  const value = new Animated.Value(0);
+
+  const lottieDownloadingRef = useRef(null);
+
+  const opacity = value;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -92,11 +112,49 @@ export default function ModalSongV3({ navigation }) {
     }
   };
 
+  const previousSong = () => {
+    let index = historyRedux.historyList.findIndex((element, index) => {
+      return element.id === playSongStore.infoSong.id;
+    });
+
+    for (let i = 0; i < historyRedux.historyList.length; i++) {
+      if (
+        i > index &&
+        historyRedux.historyList[i].id !== playSongStore.infoSong.id
+      ) {
+        index = i;
+        break;
+      }
+    }
+    playSound({ uri: historyRedux.historyList[index].linkSong });
+
+    let newSuggestSongList = [
+      playSongStore.infoSong,
+      ...suggestSongRedux.suggestSongList,
+    ];
+    dispatch(updateDataSuggestSongList(newSuggestSongList));
+    dispatch(playSong(historyRedux.historyList[index]));
+  };
+
+  const nextSong = () => {
+    playSound({ uri: suggestSongRedux.suggestSongList[0].linkSong });
+    dispatch(
+      addHistoryAsync({
+        ...suggestSongRedux.suggestSongList[0],
+        token: userInfo.token,
+      })
+    );
+    dispatch(playSong(suggestSongRedux.suggestSongList[0]));
+    dispatch(
+      updateDataSuggestSongList(suggestSongRedux.suggestSongList.slice(1))
+    );
+  };
+
   const addSongToPlaylist = async (item) => {
     await dispatch(
       postSongPlaylistAsync({
         idPlaylist: item.id,
-        idSong: playSongStore.id,
+        idSong: playSongStore.infoSong.id,
         token: userInfo.token,
       })
     ).then((result) => {
@@ -109,6 +167,16 @@ export default function ModalSongV3({ navigation }) {
         ToastAndroid.show("Đã thêm vào playlist", ToastAndroid.SHORT);
       }
     });
+  };
+
+  const handleDownload = () => {
+    if (isDownloading === "false") {
+      dispatch(addQueue({ ...playSongStore.infoSong, progress: 0 }));
+      downloadFromUrl(playSongStore.infoSong);
+      ToastAndroid.show("Đang tải xuống", ToastAndroid.SHORT);
+    } else if (isDownloading === "true") {
+      console.log("xoa");
+    }
   };
 
   const renderItem = ({ item }) => {
@@ -192,18 +260,6 @@ export default function ModalSongV3({ navigation }) {
     );
   };
 
-  useEffect(() => {
-    if (showLottie) {
-      lottieRef.current.play();
-    }
-  }, [showLottie]);
-
-  useEffect(() => {
-    setIsLiked(
-      !!songLikeRedux.songLikeList.find((item) => item.id === playSongStore.id)
-    );
-  }, []);
-
   const createNewPlaylist = async () => {
     if (textInputValue === "") {
       ToastAndroid.show("Không để trống", ToastAndroid.SHORT);
@@ -234,7 +290,7 @@ export default function ModalSongV3({ navigation }) {
       await dispatch(
         addPlaylistAsync({
           namePlaylist: textInputValue,
-          access: isPublic ? "public" : "private",
+          access: "private",
           token: userInfo.token,
         })
       ).then((result) => {
@@ -243,8 +299,9 @@ export default function ModalSongV3({ navigation }) {
             ToastAndroid.show("Playlist đã tồn tại", ToastAndroid.SHORT);
           }
         } else if (result.type.includes("fulfilled")) {
-          addSongToPlaylist();
+          addSongToPlaylist(result.payload[result.payload.length - 1]);
           ToastAndroid.show("Đã thêm mới", ToastAndroid.SHORT);
+          setModalCreatePlaylistVisible(false);
         }
       });
     }
@@ -255,19 +312,10 @@ export default function ModalSongV3({ navigation }) {
       if (userInfo.token) {
         if (!isLiked) {
           setIsLiked(true);
-          dispatch(
-            addSongLike({
-              id: playSongStore.id,
-              nameSong: playSongStore.nameSong,
-              nameAuthor: playSongStore.nameAuthor,
-              linkSong: "",
-              lyric: "",
-              img: "",
-            })
-          );
+          dispatch(addSongLike(playSongStore.infoSong));
           await dispatch(
             addSongLikeAsync({
-              idSong: playSongStore.id,
+              idSong: playSongStore.infoSong.id,
               token: userInfo.token,
             })
           )
@@ -282,19 +330,10 @@ export default function ModalSongV3({ navigation }) {
           setShowLottie(true);
         } else {
           setIsLiked(false);
-          dispatch(
-            deleteSongLike({
-              id: playSongStore.id,
-              nameSong: playSongStore.nameSong,
-              nameAuthor: playSongStore.nameAuthor,
-              linkSong: "",
-              lyric: "",
-              img: "",
-            })
-          );
+          dispatch(deleteSongLike(playSongStore.infoSong));
           await dispatch(
             deleteSongLikeAsync({
-              idSong: playSongStore.id,
+              idSong: playSongStore.infoSong.id,
               token: userInfo.token,
             })
           )
@@ -316,11 +355,13 @@ export default function ModalSongV3({ navigation }) {
     }
   };
 
-  const togglePlayMode = (_playMode) => {
-    if (_playMode === configAudio.playMode) {
-      dispatch(setPlayMode(PLAY_MODE.SEQUENCE));
+  const togglePlayMode = () => {
+    if (configAudio.playMode === PLAY_MODE.SEQUENCE) {
+      dispatch(setPlayMode(PLAY_MODE.RANDOM));
+    } else if (configAudio.playMode === PLAY_MODE.RANDOM) {
+      dispatch(setPlayMode(PLAY_MODE.LOOP));
     } else {
-      dispatch(setPlayMode(_playMode));
+      dispatch(setPlayMode(PLAY_MODE.SEQUENCE));
     }
   };
 
@@ -335,6 +376,62 @@ export default function ModalSongV3({ navigation }) {
   };
 
   useEffect(() => {
+    setIsLiked(
+      !!songLikeRedux.songLikeList.find(
+        (item) => item.id === playSongStore.infoSong.id
+      )
+    );
+  }, []);
+
+  useEffect(() => {
+    if (showLottie) {
+      lottieRef.current.play();
+    }
+  }, [showLottie]);
+
+  useEffect(() => {
+    if (isDownloading === "downloading" && modalVisible) {
+      lottieDownloadingRef.current.play();
+    }
+  }, [isDownloading, modalVisible]);
+
+  useEffect(() => {
+    if (
+      modalVisible ||
+      modalCreatePlaylistVisible ||
+      modalEditPlaylistVisible
+    ) {
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: 0.6,
+          duration: 200,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [modalVisible, modalCreatePlaylistVisible, modalEditPlaylistVisible]);
+
+  useEffect(() => {
+    const _storage = [...storageRedux.storage];
+    const i = _storage.find((item) => item.id === playSongStore.infoSong.id);
+
+    if (i) {
+      setIsDownloading("true");
+    } else {
+      setIsDownloading("false");
+    }
+    if (storageRedux.queue.length > 0) {
+      const _queue = [...storageRedux.queue];
+      const i = _queue.find((item) => item.id === playSongStore.infoSong.id);
+
+      if (i) {
+        setIsDownloading("downloading");
+      }
+    }
+  }, [storageRedux]);
+
+  useEffect(() => {
     setSliderValue(curTime);
   }, [curTime]);
 
@@ -343,14 +440,14 @@ export default function ModalSongV3({ navigation }) {
       <View
         style={{
           ...styles.centeredView,
-          backgroundColor: "yellow",
+          backgroundColor: "#E7CBCB",
         }}
       >
         <View
           style={{
             height: "80%",
             width: "100%",
-            backgroundColor: "yellow",
+            backgroundColor: "#E7CBCB",
           }}
           onTouchStart={(e) => (this.touchY = e.nativeEvent.pageY)}
           onTouchEnd={(e) => {
@@ -435,23 +532,32 @@ export default function ModalSongV3({ navigation }) {
                 },
               ]}
             >
-              {playSongStore.nameSong}
+              {playSongStore.infoSong.nameSong}
             </Text>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={[
-                styles.text,
-                {
-                  fontSize: 18,
-                  marginTop: 8,
-                  backgroundColor: "black",
-                  alignSelf: "flex-start",
-                },
-              ]}
+            <TouchableOpacity
+              onPress={() => {
+                dispatch(
+                  getInfoAuthor({ idUser: playSongStore.infoSong.idUser })
+                );
+                navigation.navigate("Author");
+              }}
             >
-              {playSongStore.nameAuthor}
-            </Text>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[
+                  styles.text,
+                  {
+                    fontSize: 18,
+                    marginTop: 8,
+                    backgroundColor: "black",
+                    alignSelf: "flex-start",
+                  },
+                ]}
+              >
+                {playSongStore.infoSong.nameAuthor}
+              </Text>
+            </TouchableOpacity>
           </View>
           <View
             style={{
@@ -467,7 +573,7 @@ export default function ModalSongV3({ navigation }) {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="chevron-down-outline" size={32} color="gray" />
+              <Ionicons name="chevron-down-outline" size={32} color="black" />
             </TouchableWithoutFeedback>
           </View>
         </View>
@@ -488,9 +594,9 @@ export default function ModalSongV3({ navigation }) {
             }}
           >
             {isLiked ? (
-              <Ionicons name="heart" size={32} color="orange" />
+              <Ionicons name="heart" size={32} color="red" />
             ) : (
-              <Ionicons name="heart-outline" size={32} color="gray" />
+              <Ionicons name="heart-outline" size={32} color="black" />
             )}
           </TouchableOpacity>
           {/* <View style={{ flexWrap: "wrap", flex: 1, flexDirection: "column" }}>
@@ -547,16 +653,26 @@ export default function ModalSongV3({ navigation }) {
         >
           <TouchableOpacity
             onPress={() => {
-              togglePlayMode(PLAY_MODE.RANDOM);
+              togglePlayMode();
             }}
           >
             {configAudio.playMode === PLAY_MODE.RANDOM ? (
-              <Ionicons name="shuffle" size={32} color="pink" />
+              <Ionicons name="shuffle" size={32} color="black" />
+            ) : configAudio.playMode === PLAY_MODE.LOOP ? (
+              <Ionicons name="repeat-outline" size={32} color="black" />
             ) : (
-              <Ionicons name="shuffle" size={32} color="gray" />
+              <Ionicons
+                name="return-up-forward-outline"
+                size={32}
+                color="black"
+              />
             )}
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPressOut={() => {
+              previousSong();
+            }}
+          >
             <Ionicons name="play-skip-back" size={32} color="#3D425C" />
           </TouchableOpacity>
           <TouchableOpacity
@@ -570,7 +686,11 @@ export default function ModalSongV3({ navigation }) {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPressOut={() => {
+              nextSong();
+            }}
+          >
             <Ionicons name="play-skip-forward" size={32} color="#3D425C" />
           </TouchableOpacity>
           <TouchableOpacity
@@ -578,11 +698,27 @@ export default function ModalSongV3({ navigation }) {
               navigation.navigate("Suggest");
             }}
           >
-            <Ionicons name="list-outline" size={32} color="gray" />
+            <Ionicons name="list-outline" size={32} color="black" />
           </TouchableOpacity>
         </View>
       </View>
-      {/* <Suggest></Suggest> */}
+
+      <Animated.View
+        style={{
+          opacity: opacity,
+          backgroundColor: "#000",
+          width: width,
+          height: height,
+          position: "absolute",
+          display:
+            modalVisible ||
+            modalCreatePlaylistVisible ||
+            modalEditPlaylistVisible
+              ? "flex"
+              : "none",
+        }}
+      ></Animated.View>
+
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -667,9 +803,10 @@ export default function ModalSongV3({ navigation }) {
                     ellipsizeMode="tail"
                     style={{ fontWeight: "bold", marginRight: 5 }}
                   >
-                    {playSongStore.nameSong}
+                    {playSongStore.infoSong.nameSong}
                   </Text>
                 </View>
+
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -679,7 +816,7 @@ export default function ModalSongV3({ navigation }) {
                     fontSize: 12,
                   }}
                 >
-                  {playSongStore.nameAuthor}
+                  {playSongStore.infoSong.nameAuthor}
                 </Text>
               </View>
             </View>
@@ -718,7 +855,11 @@ export default function ModalSongV3({ navigation }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPressOut={() => {
+                  handleDownload();
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -726,7 +867,24 @@ export default function ModalSongV3({ navigation }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="download-outline" size={30} />
+                  {isDownloading === "downloading" ? (
+                    <LottieView
+                      style={{
+                        width: 30,
+                        height: 30,
+                        transform: [{ scale: 1.3 }],
+                      }}
+                      ref={lottieDownloadingRef}
+                      source={require("../../assets/loading.json")}
+                      renderMode={"SOFTWARE"}
+                      loop={true}
+                    />
+                  ) : isDownloading === "false" ? (
+                    <Ionicons color="black" name="download-outline" size={30} />
+                  ) : (
+                    <Ionicons color="black" name="close-circle-outline" size={30} />
+                  )}
+
                   <Text
                     style={{
                       fontWeight: "bold",
@@ -735,7 +893,11 @@ export default function ModalSongV3({ navigation }) {
                       marginLeft: 15,
                     }}
                   >
-                    Tải xuống
+                    {isDownloading === "downloading"
+                      ? "Đang tải xuống"
+                      : isDownloading === "false"
+                      ? "Tải xuống"
+                      : "Xóa khỏi tải xuống"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -809,7 +971,7 @@ export default function ModalSongV3({ navigation }) {
                 height: 0.6 * height,
                 top: 0,
                 left: 0,
-                opacity: 0.5,
+                opacity: 0,
               }}
             ></View>
           </TouchableWithoutFeedback>
@@ -969,7 +1131,7 @@ export default function ModalSongV3({ navigation }) {
                 height: "100%",
                 top: 0,
                 left: 0,
-                opacity: 0.5,
+                opacity: 0,
               }}
             ></View>
           </TouchableWithoutFeedback>
@@ -1191,7 +1353,7 @@ const optionsStyles = {
   },
   optionsWrapper: {},
   optionWrapper: {
-    backgroundColor: "yellow",
+    backgroundColor: "#E7CBCB",
     margin: 5,
   },
   optionTouchable: {

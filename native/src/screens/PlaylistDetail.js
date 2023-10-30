@@ -22,8 +22,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import CardSongForPlaylist from "../components/CardSongForPlaylist";
-import { deletePlaylistAsync, getPlaylists } from "../redux/playlistSlice";
 import { putPlaylistAsync } from "../redux/playlistDetailSlice";
+import { deletePlaylistAsync, getPlaylists } from "../redux/playlistSlice";
 
 export default function PlaylistDetail({ route }) {
   const { width, height } = Dimensions.get("window");
@@ -57,7 +57,6 @@ export default function PlaylistDetail({ route }) {
   };
 
   const deletePlaylist = async () => {
-    console.log(playlistDetailRedux.idPlaylist);
     await dispatch(
       deletePlaylistAsync({
         idPlaylist: playlistDetailRedux.idPlaylist,

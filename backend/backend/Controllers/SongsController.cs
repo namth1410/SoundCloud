@@ -66,6 +66,43 @@ namespace backend.Controllers
             return await _songRepository.getSongLikeList(idUser);
         }
 
+        [HttpGet("getInfoByAuthor")]
+        public async Task<ActionResult<IEnumerable<Song>>> GetInfoByAuthor(string idUser)
+        {
+
+            if (_context.Songs == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _context.Users
+                   .Where(u => u.Id == idUser)
+                   .Select(u => new UserProfileModel
+                   {
+                       Username = u.UserName,
+                       Email = u.Email,
+                       Name = u.Name
+                   })
+                   .FirstOrDefaultAsync();
+
+            var songs = await _context.Songs
+                .Where(s => s.IdUser == idUser)
+                .ToListAsync();
+
+            var playlists = await _context.Playlist
+                .Where(p => p.IdUser == idUser)
+                .ToListAsync();
+
+            var result = new
+            {
+                User = user,
+                Songs = songs,
+                Playlists = playlists
+            };
+
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPost("addSongLike")]
         public async Task<ActionResult> PostSongLike([FromQuery] string idSong)
@@ -178,10 +215,10 @@ namespace backend.Controllers
             var listHistory = _context.History
                 .Where(h => h.IdUser == idUser)
                 .Include(h => h.Song) // Nối bảng Song
+                .OrderByDescending(h => h.CreatedAt)
                 .Select(h => h.Song) // Chọn các bản ghi từ bảng Song
                 .ToList();
 
-            Console.WriteLine(listHistory);
             return Ok(listHistory);
         }
 
@@ -216,6 +253,7 @@ namespace backend.Controllers
                     var history = new History();
                     history.IdUser = idUser;
                     history.IdSong = int.Parse(idSong);
+                    history.CreatedAt = DateTime.Now;
                     _context.History.Add(history);
                     await _context.SaveChangesAsync();
                 }
@@ -236,6 +274,7 @@ namespace backend.Controllers
                         var history = new History();
                         history.IdUser = idUser;
                         history.IdSong = int.Parse(idSong);
+                        history.CreatedAt = DateTime.Now;
                         _context.History.Add(history);
                         await _context.SaveChangesAsync();
                     }
@@ -250,12 +289,14 @@ namespace backend.Controllers
                 var history = new History();
                 history.IdUser = idUser;
                 history.IdSong = int.Parse(idSong);
+                history.CreatedAt = DateTime.Now;
                 _context.History.Add(history);
                 await _context.SaveChangesAsync();
 
             }
             var newSongs = _context.History
                 .Where(h => h.IdUser == idUser)
+                .OrderByDescending(h => h.CreatedAt)
                 .Select(h => h.Song)
                 .ToList();
 
@@ -280,6 +321,7 @@ namespace backend.Controllers
 
                 var remainingSongs = _context.History
                     .Where(h => h.IdUser == idUser)
+                    .OrderByDescending(h => h.CreatedAt)
                     .Select(h => h.Song)
                     .ToList();
                 return Ok(remainingSongs);
@@ -390,6 +432,8 @@ namespace backend.Controllers
             song.NameSong = songModel.nameSong;
             song.NameAuthor = "Trần Nam";
             song.LinkSong = songModel.linkSong;
+            song.Access = songModel.access;
+            song.Img = songModel.image;
             _context.Songs.Add(song);
             await _context.SaveChangesAsync();
 

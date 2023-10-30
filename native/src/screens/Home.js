@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect } from "react";
 import {
   SafeAreaView,
@@ -13,14 +14,11 @@ import { getHistoryList } from "../redux/historySlice";
 import { getPlaylists } from "../redux/playlistSlice";
 import { getSongLikeList } from "../redux/songLikeSlice";
 import { fakeDataSuggestSongList } from "../redux/suggestSongSlice";
-
 export default function Home({}) {
   const allSong = useSelector((state) => state.allSong);
-  const playSongStore = useSelector((state) => state.playSongRedux);
   const userInfo = useSelector((state) => state.userInfo);
-  const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
   const dispatch = useDispatch();
-
+  const navigation = useNavigation();
   useEffect(() => {
     if (userInfo.token) {
       dispatch(getSongLikeList({ token: userInfo.token }));
@@ -30,9 +28,8 @@ export default function Home({}) {
   }, []);
 
   useEffect(() => {
-    dispatch(fakeDataSuggestSongList([...allSong.songs]));
-    console.log(suggestSongRedux.suggestSongList);
-  }, [allSong.songs]);
+    dispatch(fakeDataSuggestSongList([]));
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -43,7 +40,11 @@ export default function Home({}) {
         }}
       >
         <StatusBar translucent={false}></StatusBar>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("Author");
+          }}
+        >
           <Text
             style={{
               fontWeight: "bold",
@@ -83,7 +84,7 @@ export default function Home({}) {
           ></PlayList>
         </ScrollView>
       </View>
-      {/* {playSongStore.nameSong ? <ControlSong></ControlSong> : <></>} */}
+      {/* {playSongStore.infoSong.nameSong ? <ControlSong></ControlSong> : <></>} */}
     </SafeAreaView>
   );
 }
