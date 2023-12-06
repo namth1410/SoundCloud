@@ -8,7 +8,6 @@ import {
   Image,
   Modal,
   PanResponder,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,7 +17,9 @@ import {
   View,
   Animated,
   Easing,
+  StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { State, TapGestureHandler } from "react-native-gesture-handler";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,8 +28,11 @@ import { getInfoAuthor } from "../redux/authorSlice";
 import { PLAY_MODE, setPlayMode } from "../redux/configAudioSlice";
 import { addHistoryAsync } from "../redux/historySlice";
 import { continuePlaySong, pauseSong, playSong } from "../redux/playSongSlice";
-import { postSongPlaylistAsync } from "../redux/playlistDetailSlice";
-import { addPlaylistAsync } from "../redux/playlistSlice";
+import {
+  deleteSongPlaylistAsync,
+  postSongPlaylistAsync,
+} from "../redux/playlistDetailSlice";
+import { addPlaylistAsync, getPlaylists } from "../redux/playlistSlice";
 import {
   addSongLike,
   addSongLikeAsync,
@@ -38,6 +42,11 @@ import {
 import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
 import MySlider from "./MySlider";
 import { addQueue, updateStorage } from "../redux/storageSlice";
+import {
+  convertNumberToString,
+  convertTimeToString,
+} from "../ultis/FunctionHelper";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 export default function ModalSongV3({ navigation }) {
   const playSongStore = useSelector((state) => state.playSongRedux);
@@ -60,6 +69,8 @@ export default function ModalSongV3({ navigation }) {
     continuePlaySound,
     playSound,
     downloadFromUrl,
+    playNextTrack,
+    playPreTrack,
   } = useAudio();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalEditPlaylistVisible, setModalEditPlaylistVisible] =
@@ -68,7 +79,7 @@ export default function ModalSongV3({ navigation }) {
     useState(false);
   const textInputRef = useRef(null);
   const [textInputValue, setTextInputValue] = useState("");
-  const [isDownloading, setIsDownloading] = useState("false");
+  const [isDownloaded, setIsDownloaded] = useState("false");
 
   const [sliderValue, setSliderValue] = useState(10);
   const doubleTapRef = useRef(null);
@@ -112,77 +123,76 @@ export default function ModalSongV3({ navigation }) {
     }
   };
 
-  const previousSong = () => {
-    let index = historyRedux.historyList.findIndex((element, index) => {
-      return element.id === playSongStore.infoSong.id;
-    });
-
-    for (let i = 0; i < historyRedux.historyList.length; i++) {
-      if (
-        i > index &&
-        historyRedux.historyList[i].id !== playSongStore.infoSong.id
-      ) {
-        index = i;
-        break;
-      }
-    }
-    playSound({ uri: historyRedux.historyList[index].linkSong });
-
-    let newSuggestSongList = [
-      playSongStore.infoSong,
-      ...suggestSongRedux.suggestSongList,
-    ];
-    dispatch(updateDataSuggestSongList(newSuggestSongList));
-    dispatch(playSong(historyRedux.historyList[index]));
-  };
-
-  const nextSong = () => {
-    playSound({ uri: suggestSongRedux.suggestSongList[0].linkSong });
-    dispatch(
-      addHistoryAsync({
-        ...suggestSongRedux.suggestSongList[0],
-        token: userInfo.token,
-      })
-    );
-    dispatch(playSong(suggestSongRedux.suggestSongList[0]));
-    dispatch(
-      updateDataSuggestSongList(suggestSongRedux.suggestSongList.slice(1))
-    );
-  };
-
   const addSongToPlaylist = async (item) => {
-    await dispatch(
-      postSongPlaylistAsync({
-        idPlaylist: item.id,
-        idSong: playSongStore.infoSong.id,
-        token: userInfo.token,
-      })
-    ).then((result) => {
-      if (result.type.includes("rejected")) {
-        if (result.error.message === "Dòng dữ liệu đã tồn tại.") {
-          ToastAndroid.show("Playlist đã tồn tại", ToastAndroid.SHORT);
+    if (item.idSongList.includes(playSongStore.infoSong.id)) {
+      await dispatch(
+        deleteSongPlaylistAsync({
+          idPlaylist: item.id,
+          idSong: playSongStore.infoSong.id,
+          token: userInfo.token,
+        })
+      ).then((result) => {
+        if (result.type.includes("rejected")) {
+          if (result.error.message === "Dòng dữ liệu đã tồn tại.") {
+            ToastAndroid.show("Playlist đã tồn tại", ToastAndroid.SHORT);
+          }
+        } else if (result.type.includes("fulfilled")) {
+          dispatch(getPlaylists({ token: userInfo.token }));
+          // setModalEditPlaylistVisible(false);
+          ToastAndroid.show(
+            `Đã xóa khỏi playlist ${item.namePlaylist}`,
+            ToastAndroid.SHORT
+          );
         }
-      } else if (result.type.includes("fulfilled")) {
-        setModalEditPlaylistVisible(false);
-        ToastAndroid.show("Đã thêm vào playlist", ToastAndroid.SHORT);
-      }
-    });
+      });
+    } else {
+      await dispatch(
+        postSongPlaylistAsync({
+          idPlaylist: item.id,
+          idSong: playSongStore.infoSong.id,
+          token: userInfo.token,
+        })
+      ).then((result) => {
+        if (result.type.includes("rejected")) {
+          if (result.error.message === "Dòng dữ liệu đã tồn tại.") {
+            ToastAndroid.show("Playlist đã tồn tại", ToastAndroid.SHORT);
+          }
+        } else if (result.type.includes("fulfilled")) {
+          dispatch(getPlaylists({ token: userInfo.token }));
+          // setModalEditPlaylistVisible(false);
+          ToastAndroid.show(
+            `Đã thêm vào playlist ${item.namePlaylist}`,
+            ToastAndroid.SHORT
+          );
+        }
+      });
+    }
   };
 
   const handleDownload = () => {
-    if (isDownloading === "false") {
+    if (isDownloaded === "false") {
       dispatch(addQueue({ ...playSongStore.infoSong, progress: 0 }));
       downloadFromUrl(playSongStore.infoSong);
       ToastAndroid.show("Đang tải xuống", ToastAndroid.SHORT);
-    } else if (isDownloading === "true") {
-      console.log("xoa");
+    } else if (isDownloaded === "true") {
+      let _storage = [...storageRedux.storage];
+      _storage = _storage.filter(
+        (item) => item.id !== playSongStore.infoSong.id
+      );
+      AsyncStorage.setItem("downloadedSongs", JSON.stringify(_storage)).then(
+        () => {
+          dispatch(updateStorage(_storage));
+          ToastAndroid.show("Đã xóa khỏi tải xuống", ToastAndroid.SHORT);
+        }
+      );
     }
   };
 
   const renderItem = ({ item }) => {
     return (
       <TouchableOpacity
-        onPress={() => {
+        delayPressIn={1000}
+        onPressOut={() => {
           addSongToPlaylist(item);
         }}
       >
@@ -191,7 +201,7 @@ export default function ModalSongV3({ navigation }) {
             width: "100%",
             flexDirection: "row",
             paddingVertical: 7,
-            backgroundColor: "gray",
+            backgroundColor: "rgb(15,15,15)",
             marginBottom: 15,
             overflow: "visible",
             borderRadius: 5,
@@ -200,32 +210,45 @@ export default function ModalSongV3({ navigation }) {
           <Image
             style={{
               resizeMode: "cover",
-              width: 50,
-              height: 50,
+              width: 65,
+              height: 65,
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={require("../../assets/gai.jpg")}
+            source={
+              item.imgFirstSong === null ||
+              item.imgFirstSong === "" ||
+              item.imgFirstSong === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: item.imgFirstSong }
+            }
           />
 
           <Image
             blurRadius={10}
             style={{
               resizeMode: "cover",
-              width: 50,
-              height: 50,
+              width: 65,
+              height: 65,
               borderRadius: 5,
               position: "absolute",
-              top: 10,
+              top: 12,
               left: 5,
             }}
-            source={require("../../assets/gai.jpg")}
+            source={
+              item.imgFirstSong === null ||
+              item.imgFirstSong === "" ||
+              item.imgFirstSong === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: item.imgFirstSong }
+            }
           />
           <View
             style={{
               flexDirection: "column",
               marginLeft: 15,
               width: 0.55 * width,
+              justifyContent: "center",
             }}
           >
             <Text
@@ -235,26 +258,55 @@ export default function ModalSongV3({ navigation }) {
             >
               {item.namePlaylist}
             </Text>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={{
-                marginTop: 2,
-                color: "rgba(0, 0, 0, 0.6)",
-                fontSize: 12,
-              }}
-            >
-              {item.name}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{
+                  marginTop: 2,
+                  color: "#A3A1A2",
+                  fontSize: 12,
+                }}
+              >
+                {`${item.numberTrack} Tracks`}
+              </Text>
+              <Icon
+                style={{ marginHorizontal: 7 }}
+                name="circle"
+                size={4}
+                color="#A3A1A2"
+              />
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{
+                  marginTop: 2,
+                  color: "#A3A1A2",
+                  fontSize: 12,
+                }}
+              >
+                {convertTimeToString(item.createdAt)}
+              </Text>
+            </View>
           </View>
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              justifyContent: "space-between",
+              justifyContent: "flex-end",
               flexGrow: 1,
             }}
-          ></View>
+          >
+            {item.idSongList.includes(playSongStore.infoSong.id) ? (
+              <Ionicons
+                name="checkmark-circle"
+                size={26}
+                color="#F57C1F"
+              ></Ionicons>
+            ) : (
+              <></>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -381,7 +433,28 @@ export default function ModalSongV3({ navigation }) {
         (item) => item.id === playSongStore.infoSong.id
       )
     );
+    if (
+      !!storageRedux.storage.find(
+        (item) => item.id === playSongStore.infoSong.id
+      )
+    ) {
+      setIsDownloaded("true");
+    } else {
+      setIsDownloaded("false");
+    }
   }, []);
+
+  useEffect(() => {
+    if (
+      !!storageRedux.storage.find(
+        (item) => item.id === playSongStore.infoSong.id
+      )
+    ) {
+      setIsDownloaded("true");
+    } else {
+      setIsDownloaded("false");
+    }
+  }, [storageRedux]);
 
   useEffect(() => {
     if (showLottie) {
@@ -390,10 +463,14 @@ export default function ModalSongV3({ navigation }) {
   }, [showLottie]);
 
   useEffect(() => {
-    if (isDownloading === "downloading" && modalVisible) {
+    if (isDownloaded === "downloading" && modalVisible) {
       lottieDownloadingRef.current.play();
     }
-  }, [isDownloading, modalVisible]);
+  }, [isDownloaded, modalVisible]);
+
+  useEffect(() => {
+    setData(playlistRedux.playlistList);
+  }, [playlistRedux]);
 
   useEffect(() => {
     if (
@@ -417,16 +494,16 @@ export default function ModalSongV3({ navigation }) {
     const i = _storage.find((item) => item.id === playSongStore.infoSong.id);
 
     if (i) {
-      setIsDownloading("true");
+      setIsDownloaded("true");
     } else {
-      setIsDownloading("false");
+      setIsDownloaded("false");
     }
     if (storageRedux.queue.length > 0) {
       const _queue = [...storageRedux.queue];
       const i = _queue.find((item) => item.id === playSongStore.infoSong.id);
 
       if (i) {
-        setIsDownloading("downloading");
+        setIsDownloaded("downloading");
       }
     }
   }, [storageRedux]);
@@ -436,18 +513,18 @@ export default function ModalSongV3({ navigation }) {
   }, [curTime]);
 
   return (
-    <SafeAreaView style={{ margin: 0, marginTop: 0, flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View
         style={{
-          ...styles.centeredView,
-          backgroundColor: "#E7CBCB",
+          flex: 1,
+          backgroundColor: "rgb(15,15,15)",
         }}
       >
         <View
           style={{
             height: "80%",
             width: "100%",
-            backgroundColor: "#E7CBCB",
+            backgroundColor: "rgb(15,15,15)",
           }}
           onTouchStart={(e) => (this.touchY = e.nativeEvent.pageY)}
           onTouchEnd={(e) => {
@@ -475,7 +552,13 @@ export default function ModalSongV3({ navigation }) {
                     borderBottomRightRadius: 20,
                     borderBottomLeftRadius: 20,
                   }}
-                  source={require("../../assets/gai.jpg")}
+                  source={
+                    playSongStore.infoSong.img === null ||
+                    playSongStore.infoSong.img === "" ||
+                    playSongStore.infoSong.img === "null"
+                      ? require("../../assets/unknow.jpg")
+                      : { uri: playSongStore.infoSong.img }
+                  }
                 />
                 {showLottie && (
                   <LottieView
@@ -496,19 +579,6 @@ export default function ModalSongV3({ navigation }) {
               </View>
             </TapGestureHandler>
           </TapGestureHandler>
-          {/* <TouchableWithoutFeedback onPress={pausePlayAction}>
-            <Image
-              blurRadius={playing ? 0 : 2}
-              style={{
-                resizeMode: "cover",
-                height: "100%",
-                width: "100%",
-                borderBottomRightRadius: 20,
-                borderBottomLeftRadius: 20,
-              }}
-              source={require("../../assets/gai.jpg")}
-            />
-          </TouchableWithoutFeedback> */}
 
           <View
             style={{
@@ -594,51 +664,19 @@ export default function ModalSongV3({ navigation }) {
             }}
           >
             {isLiked ? (
-              <Ionicons name="heart" size={32} color="red" />
+              <Ionicons name="heart" size={32} color="pink" />
             ) : (
-              <Ionicons name="heart-outline" size={32} color="black" />
+              <Ionicons name="heart-outline" size={32} color="white" />
             )}
           </TouchableOpacity>
-          {/* <View style={{ flexWrap: "wrap", flex: 1, flexDirection: "column" }}>
-            <Slider
-              maximumValue={duration}
-              minimumValue={0}
-              minimumTrackTintColor="#307ecc"
-              maximumTrackTintColor="#000000"
-              step={1000}
-              value={curTime}
-              style={{ width: "100%" }}
-              onValueChange={(curTime) => {
-                setSliderValue(curTime);
-              }}
-              onSlidingComplete={(curTime) => {
-                setPositionAudio(curTime);
-              }}
-            />
-            <View
-              style={{
-                paddingLeft: 15,
-                paddingRight: 15,
-                flexDirection: "row",
-                width: "100%",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text style={[styles.textLight, styles.timeStamp]}>
-                {formatMillisecondsToTime(sliderValue)}
-              </Text>
-              <Text style={[styles.textLight, styles.timeStamp]}>
-                {formatMillisecondsToTime(duration)}
-              </Text>
-            </View>
-          </View> */}
+
           <MySlider></MySlider>
           <TouchableOpacity
             onPress={() => {
               toggleModal();
             }}
           >
-            <Ionicons name="ellipsis-vertical-outline" size={32} color="#000" />
+            <Ionicons name="ellipsis-vertical" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -657,55 +695,56 @@ export default function ModalSongV3({ navigation }) {
             }}
           >
             {configAudio.playMode === PLAY_MODE.RANDOM ? (
-              <Ionicons name="shuffle" size={32} color="black" />
+              <Ionicons name="shuffle" size={32} color="#A3A1A2" />
             ) : configAudio.playMode === PLAY_MODE.LOOP ? (
-              <Ionicons name="repeat-outline" size={32} color="black" />
+              <Ionicons name="repeat-outline" size={32} color="#A3A1A2" />
             ) : (
               <Ionicons
                 name="return-up-forward-outline"
                 size={32}
-                color="black"
+                color="#A3A1A2"
               />
             )}
           </TouchableOpacity>
           <TouchableOpacity
             onPressOut={() => {
-              previousSong();
+              playPreTrack();
             }}
           >
-            <Ionicons name="play-skip-back" size={32} color="#3D425C" />
+            <Ionicons name="play-skip-back" size={32} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.playButtonContainer}
             onPressIn={pausePlayAction}
           >
             {playing ? (
-              <Ionicons name="pause-circle" size={60} color="#3D425C" />
+              <Ionicons name="pause-circle" size={60} color="white" />
             ) : (
-              <Ionicons name="play" size={60} color="#3D425C" />
+              <Ionicons name="play" size={60} color="white" />
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPressOut={() => {
-              nextSong();
+              playNextTrack();
             }}
           >
-            <Ionicons name="play-skip-forward" size={32} color="#3D425C" />
+            <Ionicons name="play-skip-forward" size={32} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               navigation.navigate("Suggest");
             }}
           >
-            <Ionicons name="list-outline" size={32} color="black" />
+            <Ionicons name="list-outline" size={32} color="#A3A1A2" />
           </TouchableOpacity>
         </View>
       </View>
 
       <Animated.View
         style={{
-          opacity: opacity,
+          // opacity: opacity,
+          opacity: 0.6,
           backgroundColor: "#000",
           width: width,
           height: height,
@@ -747,7 +786,7 @@ export default function ModalSongV3({ navigation }) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "rgb(15,15,15)",
               width: "100%",
               height: 0.5 * height,
               top: 0.5 * height + 20,
@@ -762,7 +801,7 @@ export default function ModalSongV3({ navigation }) {
               style={{
                 width: 0.2 * width,
                 height: 3,
-                backgroundColor: "#000",
+                backgroundColor: "white",
                 marginTop: 5,
                 borderRadius: 5,
               }}
@@ -787,7 +826,13 @@ export default function ModalSongV3({ navigation }) {
                   borderRadius: 5,
                   zIndex: 2,
                 }}
-                source={require("../../assets/gai.jpg")}
+                source={
+                  playSongStore.infoSong.img === null ||
+                  playSongStore.infoSong.img === "" ||
+                  playSongStore.infoSong.img === "null"
+                    ? require("../../assets/unknow.jpg")
+                    : { uri: playSongStore.infoSong.img }
+                }
               />
 
               <View
@@ -801,7 +846,11 @@ export default function ModalSongV3({ navigation }) {
                   <Text
                     numberOfLines={1}
                     ellipsizeMode="tail"
-                    style={{ fontWeight: "bold", marginRight: 5 }}
+                    style={{
+                      fontWeight: "bold",
+                      marginRight: 5,
+                      color: "white",
+                    }}
                   >
                     {playSongStore.infoSong.nameSong}
                   </Text>
@@ -812,7 +861,7 @@ export default function ModalSongV3({ navigation }) {
                   ellipsizeMode="tail"
                   style={{
                     marginTop: 2,
-                    color: "rgba(0, 0, 0, 0.6)",
+                    color: "#A3A1A2",
                     fontSize: 12,
                   }}
                 >
@@ -829,7 +878,8 @@ export default function ModalSongV3({ navigation }) {
               }}
             >
               <TouchableOpacity
-                onPress={() => {
+                delayPressIn={1000}
+                onPressOut={() => {
                   setModalEditPlaylistVisible(true);
                   setModalVisible(false);
                 }}
@@ -841,12 +891,12 @@ export default function ModalSongV3({ navigation }) {
                     paddingVertical: 5,
                   }}
                 >
-                  <Ionicons color="black" name="create-outline" size={30} />
+                  <Ionicons color="white" name="create-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -856,6 +906,7 @@ export default function ModalSongV3({ navigation }) {
               </TouchableOpacity>
 
               <TouchableOpacity
+                delayPressIn={1000}
                 onPressOut={() => {
                   handleDownload();
                 }}
@@ -867,7 +918,7 @@ export default function ModalSongV3({ navigation }) {
                     paddingVertical: 10,
                   }}
                 >
-                  {isDownloading === "downloading" ? (
+                  {isDownloaded === "downloading" ? (
                     <LottieView
                       style={{
                         width: 30,
@@ -879,30 +930,42 @@ export default function ModalSongV3({ navigation }) {
                       renderMode={"SOFTWARE"}
                       loop={true}
                     />
-                  ) : isDownloading === "false" ? (
-                    <Ionicons color="black" name="download-outline" size={30} />
+                  ) : isDownloaded === "false" ? (
+                    <Ionicons color="white" name="download-outline" size={30} />
                   ) : (
-                    <Ionicons color="black" name="close-circle-outline" size={30} />
+                    <Ionicons
+                      color="white"
+                      name="close-circle-outline"
+                      size={30}
+                    />
                   )}
 
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
-                    {isDownloading === "downloading"
+                    {isDownloaded === "downloading"
                       ? "Đang tải xuống"
-                      : isDownloading === "false"
+                      : isDownloaded === "false"
                       ? "Tải xuống"
                       : "Xóa khỏi tải xuống"}
                   </Text>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity
+                delayPressIn={1000}
+                onPressOut={() => {
+                  dispatch(
+                    getInfoAuthor({ idUser: playSongStore.infoSong.idUser })
+                  );
+                  navigation.navigate("Author");
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -910,12 +973,12 @@ export default function ModalSongV3({ navigation }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="person-outline" size={30} />
+                  <Ionicons color="white" name="person-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -932,12 +995,12 @@ export default function ModalSongV3({ navigation }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="trash-outline" size={30} />
+                  <Ionicons color="red" name="trash-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "red",
                       marginLeft: 15,
                     }}
                   >
@@ -966,7 +1029,7 @@ export default function ModalSongV3({ navigation }) {
           >
             <View
               style={{
-                backgroundColor: "black",
+                backgroundColor: "white",
                 width: "100%",
                 height: 0.6 * height,
                 top: 0,
@@ -978,7 +1041,7 @@ export default function ModalSongV3({ navigation }) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "rgb(15,15,15)",
               width: "100%",
               height: 0.7 * height,
               top: 0.3 * height + 20,
@@ -993,7 +1056,7 @@ export default function ModalSongV3({ navigation }) {
               style={{
                 width: 0.2 * width,
                 height: 3,
-                backgroundColor: "#000",
+                backgroundColor: "white",
                 marginTop: 5,
                 borderRadius: 5,
               }}
@@ -1011,7 +1074,9 @@ export default function ModalSongV3({ navigation }) {
                 justifyContent: "center",
               }}
             >
-              <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+              <Text
+                style={{ fontWeight: "bold", fontSize: 18, color: "#F57C1F" }}
+              >
                 Thêm bài hát vào playlist
               </Text>
             </View>
@@ -1034,8 +1099,14 @@ export default function ModalSongV3({ navigation }) {
                 }}
               >
                 <TextInput
-                  style={{ flex: 1, paddingHorizontal: 20, fontSize: 14 }}
+                  style={{
+                    flex: 1,
+                    paddingHorizontal: 20,
+                    fontSize: 14,
+                    color: "white",
+                  }}
                   placeholder="Tìm kiếm..."
+                  placeholderTextColor="white"
                 />
               </View>
 
@@ -1055,21 +1126,21 @@ export default function ModalSongV3({ navigation }) {
                   >
                     <View
                       style={{
-                        width: 50,
-                        height: 50,
-                        backgroundColor: "gray",
+                        width: 65,
+                        height: 65,
+                        backgroundColor: "rgb(50,50,50)",
                         borderRadius: 5,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Text style={{ fontSize: 24, color: "white" }}>+</Text>
+                      <Text style={{ fontSize: 24, color: "#9D9F9E" }}>+</Text>
                     </View>
                     <Text
                       style={{
                         marginLeft: 10,
                         fontSize: 16,
-                        color: "#000",
+                        color: "white",
                       }}
                     >
                       Tạo playlist
@@ -1126,7 +1197,7 @@ export default function ModalSongV3({ navigation }) {
           >
             <View
               style={{
-                backgroundColor: "black",
+                backgroundColor: "white",
                 width: "100%",
                 height: "100%",
                 top: 0,
@@ -1148,7 +1219,7 @@ export default function ModalSongV3({ navigation }) {
           >
             <View
               style={{
-                backgroundColor: "#F8F0E5",
+                backgroundColor: "rgb(15,15,15)",
                 borderRadius: 20,
                 padding: 20,
                 width: "90%",
@@ -1156,7 +1227,9 @@ export default function ModalSongV3({ navigation }) {
                 overflow: "visible",
               }}
             >
-              <Text style={{ fontWeight: "bold", fontSize: 20 }}>
+              <Text
+                style={{ fontWeight: "bold", fontSize: 20, color: "#F57C1F" }}
+              >
                 Tạo playlist
               </Text>
               <View
@@ -1168,9 +1241,9 @@ export default function ModalSongV3({ navigation }) {
               >
                 <TextInput
                   ref={textInputRef}
-                  style={{ height: 40, fontSize: 16 }}
+                  style={{ height: 40, fontSize: 16, color: "white" }}
                   placeholder="Nhập tên playlist"
-                  placeholderTextColor="gray"
+                  placeholderTextColor="#A3A1A2"
                   spellCheck={false}
                   onChangeText={(value) => {
                     setTextInputValue(value);
@@ -1261,15 +1334,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#92BBD9",
   },
-  text: {
-    color: "#fff",
-    fontSize: 30,
-    fontWeight: "bold",
-  },
+
   centeredView: {
     flex: 1,
     backgroundColor: "#fff",
-    margin: 0,
   },
   textLight: {
     color: "#B6B7BF",
@@ -1279,10 +1347,6 @@ const styles = StyleSheet.create({
   },
   textDark: {
     color: "#3D425C",
-  },
-  coverContainer: {
-    flex: 1,
-    height: "100%",
   },
   cover: {
     width: 250,

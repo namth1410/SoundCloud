@@ -155,6 +155,9 @@ namespace backend.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("Avatar")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("longtext");
@@ -299,6 +302,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("IdUser")
                         .HasColumnType("longtext");
 
@@ -320,6 +326,10 @@ namespace backend.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("NameSong")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Time")
                         .IsRequired()
                         .HasColumnType("longtext");
 

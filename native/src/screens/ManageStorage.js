@@ -7,19 +7,23 @@ import {
   Text,
   TouchableOpacity,
   View,
+  SafeAreaView,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import CardSongForStorage from "../components/CardSongForStorage";
 import { Updated } from "../redux/storageSlice";
 import LottieView from "lottie-react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useAudio } from "../common/AudioProvider";
 
 export default function ManageStorage({}) {
-  const [data, setData] = useState();
+  const { playRandomTrackList, playTrackList } = useAudio();
+  const [data, setData] = useState([]);
   const { width } = Dimensions.get("window");
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const storageRedux = useSelector((state) => state.storageRedux);
   const lottieEmptyRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(false);
@@ -35,7 +39,7 @@ export default function ManageStorage({}) {
     try {
       const downloadedSongs = await AsyncStorage.getItem("downloadedSongs");
       const parsedDownloadedSongs = JSON.parse(downloadedSongs);
-      if (parsedDownloadedSongs.length > 0) {
+      if (parsedDownloadedSongs && parsedDownloadedSongs.length > 0) {
         setIsEmpty(false);
         switch (typeOrder) {
           case "new":
@@ -92,12 +96,14 @@ export default function ManageStorage({}) {
     <SafeAreaView style={{ flex: 1 }}>
       <View
         style={{
-          backgroundColor: "white",
+          backgroundColor: "rgb(15,15,15)",
           flex: 1,
         }}
       >
-        <StatusBar translucent={false}></StatusBar>
-        <View
+        <TouchableOpacity
+          onPress={() => {
+            navigation.goBack();
+          }}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -118,7 +124,7 @@ export default function ManageStorage({}) {
           >
             Kho lưu trữ
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {isEmpty ? (
           <View
@@ -143,23 +149,75 @@ export default function ManageStorage({}) {
           </View>
         ) : (
           <>
-            <View style={{ alignItems: "center", marginTop: 20 }}>
-              <TouchableOpacity>
-                <Text
+            <View style={{ alignItems: "center", marginVertical: 10 }}>
+              <View
+                style={{
+                  width: width,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-around",
+                }}
+              >
+                <TouchableOpacity
+                  onPressOut={() => {
+                    playTrackList(data);
+                  }}
                   style={{
-                    padding: 5,
-                    textAlign: "center",
+                    width: 150,
+                    height: 35,
                     backgroundColor: "#F57C1F",
-                    color: "white",
-                    borderRadius: 100,
-                    width: 0.6 * width,
-                    fontWeight: "bold",
-                    fontSize: 18,
+                    borderRadius: 150,
+                    paddingVertical: 2,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  Phát ngẫu nhiên
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons name="play" color="white" size={26}></Ionicons>
+                  <Text
+                    style={{
+                      color: "white",
+                      marginLeft: 8,
+                      fontWeight: "bold",
+                      fontSize: 13,
+                    }}
+                  >
+                    Phát tất cả
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPressOut={() => {
+                    playRandomTrackList(data);
+                  }}
+                  style={{
+                    width: 150,
+                    height: 35,
+                    backgroundColor: "#393D3E",
+                    borderRadius: 150,
+                    paddingVertical: 2,
+                    paddingHorizontal: 25,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="shuffle-outline"
+                    color="white"
+                    size={26}
+                  ></Ionicons>
+                  <Text
+                    style={{
+                      color: "white",
+                      marginLeft: 8,
+                      fontWeight: "bold",
+                      fontSize: 13,
+                    }}
+                  >
+                    Trộn bài
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <View>
               <View
@@ -208,7 +266,7 @@ export default function ManageStorage({}) {
                     marginRight: 10,
                   }}
                 >
-                  <DropDownPicker
+                  {/* <DropDownPicker
                     style={{
                       borderRadius: 0,
                       borderWidth: 0,
@@ -220,11 +278,11 @@ export default function ManageStorage({}) {
                     setOpen={setOpen}
                     setValue={setValue}
                     setItems={setItems}
-                  />
+                  /> */}
                 </View>
               </View>
 
-              <View style={{ padding: 10 }}>
+              <View style={{ padding: 10, marginTop: 10 }}>
                 <FlatList
                   data={data}
                   onDragEnd={({ data }) => setData(data)}

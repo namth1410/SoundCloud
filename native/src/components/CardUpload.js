@@ -193,8 +193,8 @@ export default function CardUpload({ props }) {
             }}
           >
             <Ionicons
-              name="ellipsis-vertical-outline"
-              size={28}
+              name="ellipsis-vertical"
+              size={20}
               color="#000"
               style={{
                 textAlignVertical: "center",
@@ -423,7 +423,6 @@ export default function CardUpload({ props }) {
                       style={{ alignSelf: "flex-end", flexGrow: 1 }}
                       value={isPublic}
                       onValueChange={(newValue) => {
-                        // console.log(newValue);
                         dispatch(
                           updateFile({
                             ...props,

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819196180091",
+    "project_id": "soundcloud-398901",
+    "storage_bucket": "soundcloud-398901.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819196180091:android:09eb285e3097800a9bd4de",
+        "android_client_info": {
+          "package_name": "com.dinhmencc.soundcloud"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9VyP2Ne4VDk4APkkOmftYn4T36QUOSKI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

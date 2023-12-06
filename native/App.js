@@ -1,9 +1,10 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
+// import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { StyleSheet, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { MenuProvider } from "react-native-popup-menu";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -26,15 +27,26 @@ import SongAuthor from "./src/screens/SongAuthor";
 import Suggest from "./src/screens/Suggest";
 import UploadFromUser from "./src/screens/UploadFromUser";
 import User from "./src/screens/User";
+import AudioCloud from "./src/screens/AudioCloud";
+import SearchDetail from "./src/screens/SearchDetail";
+import RoomTogether from "./src/screens/RoomTogether";
+import Splash from "./src/screens/Splash";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function UserCombine() {
+  const playSongStore = useSelector((state) => state.playSongRedux);
+
   return (
     <Stack.Navigator
       initialRouteName="User"
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          paddingBottom: playSongStore.infoSong.nameSong ? 63 : 0,
+        },
+      }}
     >
       <Stack.Screen name="User" component={User} />
       <Stack.Screen name="UploadFromUser" component={UploadFromUser} />
@@ -43,6 +55,7 @@ function UserCombine() {
       <Stack.Screen name="Playlist" component={Playlist} />
       <Stack.Screen name="Author" component={Author} />
       <Stack.Screen name="SongAuthor" component={SongAuthor} />
+      <Stack.Screen name="AudioCloud" component={AudioCloud} />
 
       <Stack.Screen
         options={{
@@ -58,10 +71,17 @@ function UserCombine() {
 }
 
 function HomeCombine() {
+  const playSongStore = useSelector((state) => state.playSongRedux);
+
   return (
     <Stack.Navigator
       initialRouteName="Home"
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          paddingBottom: playSongStore.infoSong.nameSong ? 63 : 0, // Set the custom paddingBottom value
+        },
+      }}
     >
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Author" component={Author} />
@@ -71,29 +91,53 @@ function HomeCombine() {
 }
 
 function FeedCombine() {
+  const playSongStore = useSelector((state) => state.playSongRedux);
+
   return (
     <Stack.Navigator
       initialRouteName="Feed"
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          paddingBottom: playSongStore.infoSong.nameSong ? 63 : 0, // Set the custom paddingBottom value
+        },
+      }}
     >
       <Stack.Screen name="Feed" component={Feed} />
+      <Stack.Screen name="RoomTogether" component={RoomTogether} />
     </Stack.Navigator>
   );
 }
 
 function SearchCombine() {
+  const playSongStore = useSelector((state) => state.playSongRedux);
+
   return (
     <Stack.Navigator
       initialRouteName="Search"
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          paddingBottom: playSongStore.infoSong.nameSong ? 63 : 0, // Set the custom paddingBottom value
+        },
+      }}
     >
       <Stack.Screen name="Search" component={Search} />
+      <Stack.Screen name="SearchDetail" component={SearchDetail} />
+      <Stack.Screen name="Author" component={Author} />
+      <Stack.Screen
+        options={{
+          presentation: "modal",
+          animationTypeForReplace: "pop",
+        }}
+        name="PlaylistDetail"
+        component={PlaylistDetail}
+      />
     </Stack.Navigator>
   );
 }
 
 function Main() {
-  const playSongStore = useSelector((state) => state.playSongRedux);
   return (
     <MenuProvider
       customStyles={{
@@ -108,7 +152,9 @@ function Main() {
       <AudioProvider>
         <Stack.Navigator
           initialRouteName="SoundCloudTabs"
-          screenOptions={{ headerShown: false }}
+          screenOptions={{
+            headerShown: false,
+          }}
         >
           <Stack.Screen name="SoundCloudTabs" component={SoundCloudTabs} />
           <Stack.Screen
@@ -140,7 +186,11 @@ function SoundCloudTabs() {
   const playSongStore = useSelector((state) => state.playSongRedux);
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar translucent={true}></StatusBar>
+      <StatusBar
+        barStyle="light-content"
+        translucent={true}
+        backgroundColor="black"
+      ></StatusBar>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
@@ -159,9 +209,10 @@ function SoundCloudTabs() {
             return <Ionicons name={iconName} size={size} color={color} />;
           },
           tabBarActiveTintColor: "tomato",
-          tabBarInactiveTintColor: "gray",
           headerShown: false,
           tabBarHideOnKeyboard: true,
+          tabBarInactiveTintColor: "#EEEEEE",
+          tabBarStyle: { backgroundColor: "#1B2430" },
         })}
       >
         <Tab.Screen name="Nhà" component={HomeCombine} />
@@ -169,7 +220,6 @@ function SoundCloudTabs() {
         <Tab.Screen name="Tìm kiếm" component={SearchCombine} />
         <Tab.Screen name="Cá nhân" component={UserCombine} />
       </Tab.Navigator>
-
       {playSongStore.infoSong.nameSong ? <ControlSong></ControlSong> : <></>}
     </SafeAreaView>
   );
@@ -195,9 +245,10 @@ export default function App() {
       <Provider store={store}>
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName="SignIn"
+            initialRouteName="Splash"
             screenOptions={{ headerShown: false }}
           >
+            <Stack.Screen name="Splash" component={Splash} />
             <Stack.Screen name="SignIn" component={SignIn} />
             <Stack.Screen name="SignUp" component={SignUp} />
             <Stack.Screen name="Main" component={Main} />

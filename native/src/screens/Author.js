@@ -13,8 +13,10 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/FontAwesome";
+
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSelector } from "react-redux";
 import CardPlaylist from "../components/CardPlaylist";
@@ -27,7 +29,7 @@ export default function Author({}) {
 
   const [topSongs, setTopSongs] = useState([]);
   const [topPlaylists, setTopPlaylists] = useState([]);
-
+  const [likes, setLikes] = useState(0);
   const value = new Animated.Value(0);
 
   useEffect(() => {
@@ -61,12 +63,15 @@ export default function Author({}) {
   useEffect(() => {
     setTopSongs(authorInfoRedux.songList);
     setTopPlaylists(authorInfoRedux.playlistList);
+    let a = 0;
+    authorInfoRedux.songList.forEach((element) => {
+      a += element.likes;
+    });
+    setLikes(a);
   }, [authorInfoRedux]);
 
-  useEffect(() => {}, []);
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "rgb(15,15,15)" }}>
       <ScrollView>
         <View style={{ width: "100%" }}>
           <TouchableOpacity
@@ -74,7 +79,7 @@ export default function Author({}) {
               navigation.goBack();
             }}
           >
-            <Ionicons name="chevron-back-outline" size={36} color="#000" />
+            <Ionicons name="chevron-back-outline" size={36} color="#F57C1F" />
           </TouchableOpacity>
         </View>
 
@@ -86,44 +91,50 @@ export default function Author({}) {
               height: 150,
               borderRadius: 1000,
             }}
-            source={require("../../assets/test.jpg")}
+            source={
+              authorInfoRedux.avatar === null ||
+              authorInfoRedux.avatar === "" ||
+              authorInfoRedux.avatar === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: authorInfoRedux.avatar }
+            }
           />
         </View>
         <View style={{ alignItems: "center", marginTop: 10 }}>
-          <Text style={{ color: "black", fontWeight: "bold", fontSize: 20 }}>
+          <Text style={{ color: "white", fontWeight: "bold", fontSize: 20 }}>
             {authorInfoRedux.nameAuthor}
           </Text>
           <View
             style={{ flexDirection: "row", alignItems: "center", marginTop: 5 }}
           >
             <View style={{ alignItems: "center", width: 100 }}>
-              <Text>{topPlaylists.length}</Text>
+              <Text style={{ color: "white" }}>{topPlaylists.length}</Text>
               <Text style={{ color: "grey" }}>Playlist</Text>
             </View>
             <View
               style={{
                 height: "30%",
                 width: 2,
-                backgroundColor: "#000",
+                backgroundColor: "#A3A1A2",
                 marginVertical: 0,
                 borderRadius: 5,
               }}
             />
             <View style={{ alignItems: "center", width: 100 }}>
-              <Text>{topSongs.length}</Text>
+              <Text style={{ color: "white" }}>{topSongs.length}</Text>
               <Text style={{ color: "grey" }}>Bài hát</Text>
             </View>
             <View
               style={{
                 height: "30%",
                 width: 2,
-                backgroundColor: "#000",
+                backgroundColor: "#A3A1A2",
                 marginVertical: 0,
                 borderRadius: 5,
               }}
             />
             <View style={{ alignItems: "center", width: 100 }}>
-              <Text>143.5</Text>
+              <Text style={{ color: "white" }}>{likes}</Text>
               <Text style={{ color: "grey" }}>Thích</Text>
             </View>
           </View>
@@ -137,7 +148,7 @@ export default function Author({}) {
               style={{
                 width: "auto",
                 height: 50,
-                backgroundColor: "#E7CBCB",
+                backgroundColor: "rgb(150,150,150)",
                 marginTop: 10,
                 borderRadius: 5,
               }}
@@ -166,6 +177,7 @@ export default function Author({}) {
           style={{
             marginHorizontal: 10,
             marginTop: 15,
+            display: topSongs.length === 0 ? "none" : "flex",
           }}
         >
           <TouchableOpacity
@@ -178,10 +190,10 @@ export default function Author({}) {
               marginLeft: 10,
             }}
           >
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 18, color: "white" }}>
               Các bài hát
             </Text>
-            <Ionicons name="chevron-forward-outline" size={28} color="#000" />
+            <Ionicons name="chevron-forward-outline" size={28} color="white" />
           </TouchableOpacity>
           {topSongs.slice(0, 3).map((song, index) => (
             <View key={index} style={{ marginVertical: 5 }}>
@@ -194,6 +206,7 @@ export default function Author({}) {
           style={{
             marginHorizontal: 10,
             marginTop: 15,
+            display: topPlaylists.length === 0 ? "none" : "flex",
           }}
         >
           <TouchableOpacity
@@ -203,10 +216,10 @@ export default function Author({}) {
               marginLeft: 10,
             }}
           >
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 18, color: "white" }}>
               Các Playlist
             </Text>
-            <Ionicons name="chevron-forward-outline" size={28} color="#000" />
+            <Ionicons name="chevron-forward-outline" size={28} color="white" />
           </TouchableOpacity>
           {topPlaylists.slice(0, 3).map((playlist, index) => (
             <View
@@ -267,7 +280,7 @@ export default function Author({}) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "#1A1A1A",
               width: "100%",
               height: 0.5 * height,
               top: 0.5 * height + 20,
@@ -282,7 +295,7 @@ export default function Author({}) {
               style={{
                 width: 0.2 * width,
                 height: 3,
-                backgroundColor: "#000",
+                backgroundColor: "white",
                 marginTop: 5,
                 borderRadius: 5,
               }}
@@ -293,11 +306,18 @@ export default function Author({}) {
             >
               <View>
                 <View style={{ flexDirection: "row" }}>
+                  <Icon
+                    style={{ marginRight: 10, marginLeft: 5 }}
+                    name="facebook"
+                    size={24}
+                    color="#1877F2"
+                  />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 16,
                       marginRight: 10,
+                      color: "white",
                     }}
                   >
                     Facebook{" "}
@@ -311,18 +331,25 @@ export default function Author({}) {
                   </TouchableOpacity>
                 </View>
 
-                <Text>
+                <Text style={{ color: "white" }}>
                   https://www.facebook.com/profile.php?id=100053354281854
                 </Text>
               </View>
 
               <View style={{ marginTop: 10 }}>
                 <View style={{ flexDirection: "row" }}>
+                  <Icon
+                    style={{ marginRight: 10, marginLeft: 5 }}
+                    name="phone"
+                    size={24}
+                    color="green"
+                  />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 16,
                       marginRight: 10,
+                      color: "white",
                     }}
                   >
                     Số điện thoại{" "}
@@ -336,16 +363,23 @@ export default function Author({}) {
                   </TouchableOpacity>
                 </View>
 
-                <Text>0345518088</Text>
+                <Text style={{ color: "white" }}>0345518088</Text>
               </View>
 
               <View style={{ marginTop: 10 }}>
                 <View style={{ flexDirection: "row" }}>
+                  <Icon
+                    style={{ marginRight: 10, marginLeft: 5 }}
+                    name="at"
+                    size={24}
+                    color="pink"
+                  />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 16,
                       marginRight: 10,
+                      color: "white",
                     }}
                   >
                     Email{" "}
@@ -359,7 +393,7 @@ export default function Author({}) {
                   </TouchableOpacity>
                 </View>
 
-                <Text>tranhainam1410@gmail.com</Text>
+                <Text style={{ color: "white" }}>tranhainam1410@gmail.com</Text>
               </View>
             </View>
           </View>

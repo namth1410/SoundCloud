@@ -8,34 +8,10 @@ import {
 import { storage } from "../api/firebase";
 import * as ImagePicker from "expo-image-picker";
 import { deleteFile, updateFile } from "../redux/uploadSlice";
-import { postSongFromUserAsync } from "../redux/songSlice";
-
-// const save = async (uri, filename, mimetype) => {
-//   if (Platform.OS === "android") {
-//     const permissions =
-//       await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-//     if (permissions.granted) {
-//       const base64 = await FileSystem.readAsStringAsync(uri, {
-//         encoding: FileSystem.EncodingType.Base64,
-//       });
-//       await FileSystem.StorageAccessFramework.createFileAsync(
-//         permissions.directoryUri,
-//         filename,
-//         mimetype
-//       )
-//         .then(async (uri) => {
-//           await FileSystem.writeAsStringAsync(uri, base64, {
-//             encoding: FileSystem.EncodingType.Base64,
-//           });
-//         })
-//         .catch((e) => console.log(e));
-//     } else {
-//       shareAsync(uri);
-//     }
-//   } else {
-//     shareAsync(uri);
-//   }
-// };
+import {
+  deleteSongFromUserAsync,
+  postSongFromUserAsync,
+} from "../redux/audioCloudSlice";
 
 export const pickAndConfigureFile = async () => {
   const result = await DocumentPicker.getDocumentAsync({
@@ -53,20 +29,6 @@ export const pickAndConfigureFile = async () => {
   } else {
     return null;
   }
-
-  // if (permissions.type === "success") {
-  //   // Lưu thông tin tệp và tùy chọn vào trạng thái ứng dụng
-  //   const selectedFile = permissions;
-  //   // Hiển thị giao diện để cài đặt tùy chọn
-
-  //   // Khi người dùng chọn "Tải lên" sau khi cài đặt tùy chọn
-  //   const uploadResult = await uploadFileToFirebase(selectedFile, customOptions);
-  //   if (uploadResult) {
-  //     // Xử lý khi tải lên thành công
-  //   } else {
-  //     // Xử lý khi có lỗi khi tải lên
-  //   }
-  // }
 };
 
 export const pickImage = async () => {
@@ -84,94 +46,6 @@ export const pickImage = async () => {
   }
 };
 
-export const uploadFileToFirebase = async () => {
-  if (Platform.OS === "android") {
-    try {
-      const permissions = await DocumentPicker.getDocumentAsync({
-        type: "audio/*",
-      });
-      if (permissions.type !== "success") {
-        const { uri, name } = permissions;
-        console.log(`File URI: ${permissions.assets[0].uri}`);
-        console.log(`File Name: ${permissions.assets[0].name}`);
-
-        const storageRef = ref(storage, `Stuff/${permissions.assets[0].name}`);
-        const response = await fetch(permissions.assets[0].uri);
-        const blob = await response.blob();
-
-        const snapshot = uploadBytesResumable(storageRef, blob, {
-          contentType: "audio/mpeg", // Ví dụ: "audio/mpeg" cho file MP3
-        });
-
-        const trackUploadProgress = async () => {
-          return new Promise((resolve) => {
-            snapshot.on("state_changed", (taskSnapshot) => {
-              const progress =
-                (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
-              console.log(`Progress: ${progress}%`);
-              if (taskSnapshot.bytesTransferred === taskSnapshot.totalBytes) {
-                const _storageRef = ref(
-                  storage,
-                  `Stuff/${permissions.assets[0].name}`
-                );
-                setTimeout(() => {
-                  getDownloadURL(_storageRef)
-                    .then((url) => {
-                      console.log("URL của tệp:", url);
-                      // Ở đây, bạn có thể sử dụng biến `url` để thực hiện công việc cần thiết với URL của tệp.
-                    })
-                    .catch((error) => {
-                      console.error("Lỗi khi lấy URL:", error);
-                    });
-                }, 2000);
-              }
-              if (taskSnapshot.state === "success") {
-                resolve();
-              }
-            });
-          });
-        };
-
-        // Đợi đến khi tải lên hoàn thành
-        await trackUploadProgress();
-
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
-        console.log(`File available at: ${downloadURL}`);
-        return downloadURL;
-      } else {
-        console.log("User canceled document picker.");
-        return null;
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải lên tệp:", error);
-      return null;
-    }
-    // const permissions =
-    //   await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-    // if (permissions.granted) {
-    //   try {
-    //     let result = await DocumentPicker.getDocumentAsync({});
-    //     // console.log(result.uri);
-    //     console.log(result);
-    //     const storageRef = ref(storage, "Stuff/" + new Date().getTime());
-    //     const snapshot = await uploadBytesResumable(storageRef);
-
-    //     const downloadURL = await snapshot.ref.getDownloadURL();
-    //     console.log(downloadURL);
-    //     return downloadURL;
-    //   } catch (error) {
-    //     console.error("Lỗi khi tải lên tệp:", error);
-    //     return null;
-    //   }
-    // } else {
-    //   // Xử lý khi không có quyền truy cập
-    // }
-  } else {
-    // Xử lý trên các nền tảng khác
-    return null;
-  }
-};
 export const uploadFileToFirebaseV2 = async (item) => {
   if (Platform.OS === "android") {
     try {
@@ -246,9 +120,6 @@ export const uploadFileToFirebaseV2 = async (item) => {
       if (item.image) {
         imageDownloadURL = await getDownloadURL(imageSnapshot.ref);
       }
-
-      console.log(audioDownloadURL);
-      console.log(imageDownloadURL);
 
       return { audioURL: audioDownloadURL, imageURL: imageDownloadURL };
     } catch (error) {
@@ -340,7 +211,6 @@ export const uploadFileToFirebaseV3 = async (item, dispatch, token) => {
             dispatch(updateFile({ ...item, progress: progress }));
             if (taskSnapshot.bytesTransferred === taskSnapshot.totalBytes) {
               const _storageRef = ref(storage, `Stuff/${item.assets[0].name}`);
-              dispatch(deleteFile(item));
               setTimeout(() => {
                 getDownloadURL(_storageRef)
                   .then((url) => {
@@ -348,6 +218,8 @@ export const uploadFileToFirebaseV3 = async (item, dispatch, token) => {
                     console.log(item);
                     console.log(imageDownloadURL);
                     resolve(url);
+                    dispatch(deleteFile(item));
+
                     dispatch(
                       postSongFromUserAsync({
                         nameSong: item.assets[0].name,
@@ -382,12 +254,24 @@ export const uploadFileToFirebaseV3 = async (item, dispatch, token) => {
   }
 };
 
-export const deleteFileToFirebase = async (fileLocation) => {
+export const deleteFileFromFirebase = async (item, dispatch, token) => {
   try {
-    const storageRef = ref(storage, "Stuff/Nhạc hay (1).wav");
+    console.log(typeof item.img);
+    let storageRef = ref(storage, `Stuff/${item.nameSong}`);
+    await deleteObject(storageRef);
+    if (item.img !== "null") {
+      storageRef = ref(storage, `Image/${item.nameSong}`);
+      await deleteObject(storageRef);
+    }
+
+    await dispatch(
+      deleteSongFromUserAsync({
+        idSong: item.id,
+        token: token,
+      })
+    );
 
     // Xóa tệp tin trên Firebase Storage
-    await deleteObject(storageRef);
 
     // Xóa thành công
     console.log("Xóa tệp tin thành công.");

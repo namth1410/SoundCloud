@@ -12,8 +12,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
@@ -84,7 +84,7 @@ export default function SongAuthor({}) {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "rgb(15,15,15)" }}>
       <View>
         <View
           style={{ width: "100%", flexDirection: "row", alignItems: "center" }}
@@ -94,9 +94,11 @@ export default function SongAuthor({}) {
               navigation.goBack();
             }}
           >
-            <Ionicons name="chevron-back-outline" size={36} color="#000" />
+            <Ionicons name="chevron-back-outline" size={36} color="#F57C1F" />
           </TouchableOpacity>
-          <Text style={{ fontWeight: "bold", fontSize: 18 }}>Các bài hát</Text>
+          <Text style={{ fontWeight: "bold", fontSize: 18, color: "#F57C1F" }}>
+            Các bài hát
+          </Text>
         </View>
 
         <View
@@ -108,11 +110,7 @@ export default function SongAuthor({}) {
         >
           <TouchableOpacity
             onPress={() => {
-              playSound({ uri: topSongs[0].linkSong });
-              dispatch(playSong({ ...topSongs[0] }));
-              dispatch(
-                addHistoryAsync({ ...topSongs[0], token: userInfo.token })
-              );
+              playSound(topSongs[0]);
               dispatch(updateDataSuggestSongList(topSongs.slice(1)));
             }}
           >
@@ -120,7 +118,7 @@ export default function SongAuthor({}) {
               style={{
                 padding: 5,
                 textAlign: "center",
-                backgroundColor: "#F875AA",
+                backgroundColor: "#F57C1F",
                 color: "white",
                 borderRadius: 100,
                 width: 0.6 * width,
@@ -133,7 +131,7 @@ export default function SongAuthor({}) {
           </TouchableOpacity>
         </View>
 
-        <View style={{ width: width, height: 0.72 * height }}>
+        <View style={{ width: width, height: 0.8 * height }}>
           <FlatList
             data={topSongs}
             onDragEnd={({ data }) => setData(data)}

@@ -3,8 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PLAY_MODE } from "../redux/configAudioSlice";
 import { addHistoryAsync } from "../redux/historySlice";
-import { playSong } from "../redux/playSongSlice";
 import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
+import { playSong } from "../redux/playSongSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
@@ -25,6 +25,7 @@ import {
 } from "../redux/storageSlice";
 
 const AudioContext = createContext({
+  setModeTogether: () => {},
   playSound: () => {},
   pauseSound: () => {},
   continuePlaySound: () => {},
@@ -32,7 +33,12 @@ const AudioContext = createContext({
   setPositionAudio: () => {},
   setLoopAudio: () => {},
   downloadFromUrl: () => {},
-  removeSong: () => {},
+  removeSongFromStorage: () => {},
+  addSongToNextPlay: () => {},
+  playNextTrack: () => {},
+  playPreTrack: () => {},
+  playRandomTrackList: () => {},
+  playTrackList: () => {},
 });
 
 export const useAudio = () => {
@@ -43,12 +49,16 @@ export const AudioProvider = ({ children }) => {
   const [audio, setAudio] = useState(new Audio.Sound());
   const configAudio = useSelector((state) => state.configAudio);
   const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
+  const historyRedux = useSelector((state) => state.historyRedux);
   const userInfoRedux = useSelector((state) => state.userInfo);
   const storageRedux = useSelector((state) => state.storageRedux);
+  const allSong = useSelector((state) => state.allSong);
+  const playSongStore = useSelector((state) => state.playSongRedux);
   const dispatch = useDispatch();
   const [duration, setDuration] = useState(0);
   const [curTime, setCurTime] = useState();
   const [playing, setPlaying] = useState(false);
+  const [modeTogether, setModeTogether] = useState(false);
 
   useEffect(() => {
     const pre = async () => {
@@ -77,76 +87,107 @@ export const AudioProvider = ({ children }) => {
   }, [configAudio.playMode]);
 
   useEffect(() => {
-    const setupPlaybackStatusListener = async () => {
-      audio.setOnPlaybackStatusUpdate(async (status) => {
-        if (status.isLoaded) {
-          setPlaying(true);
-        }
+    let newSuggestSongList = [...suggestSongRedux.suggestSongList];
 
-        if (status.isPlaying) {
-          const currentTime = status.positionMillis;
-          setCurTime(currentTime);
-          setPlaying(true);
-        } else if (!status.isPlaying) {
-          setPlaying(false);
-        }
+    if (suggestSongRedux.suggestSongList.length !== 12) {
+      const allSongs = allSong.songs;
+      while (newSuggestSongList.length < 12) {
+        const randomIndex = Math.floor(Math.random() * allSongs.length);
+        const randomSong = allSongs[randomIndex];
 
-        // phát bài hát kế tiếp
         if (
-          status.didJustFinish &&
-          status.isLoaded &&
-          configAudio.playMode !== PLAY_MODE.LOOP
+          !newSuggestSongList.some(
+            (song) =>
+              song.id === randomSong.id ||
+              randomSong.id === playSongStore.infoSong.id
+          )
         ) {
-          let index = 0;
-          if (configAudio.playMode === PLAY_MODE.RANDOM) {
-            index = Math.floor(
-              Math.random() * suggestSongRedux.suggestSongList.length
-            );
-          }
-          playSound({ uri: suggestSongRedux.suggestSongList[index].linkSong });
-          dispatch(playSong({ ...suggestSongRedux.suggestSongList[index] }));
-          dispatch(
-            addHistoryAsync({
-              ...suggestSongRedux.suggestSongList[index],
-              token: userInfoRedux.token,
-            })
-          );
-          dispatch(
-            updateDataSuggestSongList(suggestSongRedux.suggestSongList.slice(1))
-          );
+          newSuggestSongList.push(randomSong);
         }
-      });
-    };
+      }
 
-    setupPlaybackStatusListener();
-  }, [audio, suggestSongRedux]);
+      dispatch(updateDataSuggestSongList(newSuggestSongList));
+    }
+  }, [playSongStore]);
 
-  const playSound = async (source) => {
+  const playSound = async (item, recordHistory = true) => {
     try {
-      let checkLoading = await audio.getStatusAsync();
+      dispatch(playSong(item));
 
+      let checkLoading = await audio.getStatusAsync();
       if (checkLoading.isLoaded) {
         await audio.unloadAsync();
-        await audio.loadAsync(source);
+        await audio.loadAsync({ uri: item.linkSong });
         audio.playAsync();
         checkLoading = await audio.getStatusAsync();
         setDuration(checkLoading.durationMillis);
       } else {
-        await audio.loadAsync(source);
+        await audio.loadAsync({ uri: item.linkSong });
         audio.playAsync();
         checkLoading = await audio.getStatusAsync();
         setDuration(checkLoading.durationMillis);
       }
+      setPlaying(true);
+      if (recordHistory) {
+        dispatch(addHistoryAsync({ ...item, token: userInfoRedux.token }));
+      }
+      const setupPlaybackStatusListener = async () => {
+        audio.setOnPlaybackStatusUpdate(async (status) => {
+          if (status.isLoaded) {
+            // setPlaying(true);
+          }
+
+          if (status.isPlaying) {
+            const currentTime = status.positionMillis;
+            setCurTime(currentTime);
+            // setPlaying(true);
+          } else if (!status.isPlaying) {
+            // setPlaying(false);
+          }
+
+          // phát bài hát kế tiếp
+          if (
+            status.didJustFinish &&
+            status.isLoaded &&
+            configAudio.playMode !== PLAY_MODE.LOOP
+          ) {
+            let index = 0;
+            if (configAudio.playMode === PLAY_MODE.RANDOM) {
+              index = Math.floor(
+                Math.random() * suggestSongRedux.suggestSongList.length
+              );
+            }
+            playSound(suggestSongRedux.suggestSongList[index]);
+            dispatch(playSong({ ...suggestSongRedux.suggestSongList[index] }));
+            dispatch(
+              addHistoryAsync({
+                ...suggestSongRedux.suggestSongList[index],
+                token: userInfoRedux.token,
+              })
+            );
+            dispatch(
+              updateDataSuggestSongList(
+                suggestSongRedux.suggestSongList.slice(1)
+              )
+            );
+          }
+        });
+      };
+
+      // setupPlaybackStatusListener();
+      await AsyncStorage.setItem("playSongLasted", JSON.stringify(item));
     } catch (error) {
       console.error("Lỗi khi tải âm thanh provider:", error);
     }
   };
 
   const pauseSound = async () => {
+    setPlaying(false);
     audio.pauseAsync();
   };
 
   const continuePlaySound = async (source) => {
+    setPlaying(true);
     audio.playAsync();
   };
 
@@ -234,28 +275,72 @@ export const AudioProvider = ({ children }) => {
     }
   };
 
-  const removeSong = async (songToDelete) => {
+  const removeSongFromStorage = async (songToDelete) => {
     try {
-      // Bước 1: Lấy danh sách bài hát đã tải về từ AsyncStorage
       const downloadedSongs = await getDownloadedSongs();
-
-      // Bước 2: Tìm và xóa bài hát cụ thể khỏi danh sách
       const updatedSongs = downloadedSongs.filter(
         (song) => song.linkSong !== songToDelete.linkSong
       );
 
-      // Bước 3: Lưu danh sách bài hát đã cập nhật lại vào AsyncStorage
       await saveDownloadedSongs(updatedSongs);
       dispatch(deleteSongFromStorage(songToDelete));
-
       ToastAndroid.show(`Xóa thành công`, ToastAndroid.SHORT);
 
-      // Trả về danh sách bài hát đã cập nhật (tùy theo yêu cầu của bạn)
       return updatedSongs;
     } catch (error) {
       console.error("Lỗi khi xóa bài hát đã tải về:", error);
       return null;
     }
+  };
+
+  const addSongToNextPlay = async (song) => {
+    if (suggestSongRedux.suggestSongList.length === 0) {
+      playSound(song);
+    }
+  };
+
+  const playNextTrack = () => {
+    playSound(suggestSongRedux.suggestSongList[0]);
+    dispatch(
+      updateDataSuggestSongList(suggestSongRedux.suggestSongList.slice(1))
+    );
+  };
+
+  const playPreTrack = () => {
+    let index = historyRedux.historyList.findIndex((element, index) => {
+      return element.id === playSongStore.infoSong.id;
+    });
+
+    for (let i = 0; i < historyRedux.historyList.length; i++) {
+      if (
+        i > index &&
+        historyRedux.historyList[i].id !== playSongStore.infoSong.id
+      ) {
+        index = i;
+        break;
+      }
+    }
+    playSound(historyRedux.historyList[index], (recordHistory = false));
+
+    const newSuggestSongList = [
+      playSongStore.infoSong,
+      ...suggestSongRedux.suggestSongList.filter(
+        (song) => song.id !== playSongStore.infoSong.id
+      ),
+    ];
+    dispatch(updateDataSuggestSongList(newSuggestSongList));
+    dispatch(playSong(historyRedux.historyList[index]));
+  };
+
+  const playRandomTrackList = (trackList) => {
+    const shuffledTrackList = [...trackList].sort(() => Math.random() - 0.5);
+    playSound(shuffledTrackList[0]);
+    dispatch(updateDataSuggestSongList(shuffledTrackList.slice(1)));
+  };
+
+  const playTrackList = (trackList) => {
+    playSound(trackList[0]);
+    dispatch(updateDataSuggestSongList(trackList.slice(1)));
   };
 
   return (
@@ -264,13 +349,20 @@ export const AudioProvider = ({ children }) => {
         duration,
         curTime,
         playing,
+        modeTogether,
+        setModeTogether,
         playSound,
         pauseSound,
         continuePlaySound,
         cancelSound,
         setPositionAudio,
         downloadFromUrl,
-        removeSong,
+        removeSongFromStorage,
+        addSongToNextPlay,
+        playNextTrack,
+        playPreTrack,
+        playRandomTrackList,
+        playTrackList,
       }}
     >
       {children}

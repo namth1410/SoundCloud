@@ -12,11 +12,14 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+
 import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
 import { addHistoryAsync } from "../redux/historySlice";
 import { playSong } from "../redux/playSongSlice";
 import { deleteSongPlaylistAsync } from "../redux/playlistDetailSlice";
+import { getInfoAuthor } from "../redux/authorSlice";
 
 export default function CardSongForPlaylist({ props }) {
   const { id, img, nameSong, nameAuthor, linkSong } = props;
@@ -26,6 +29,7 @@ export default function CardSongForPlaylist({ props }) {
   const playSongStore = useSelector((state) => state.playSongRedux);
   const playlistDetailRedux = useSelector((state) => state.playlistDetailRedux);
   const { playSound } = useAudio();
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const [isLiked, setIsLiked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,17 +64,7 @@ export default function CardSongForPlaylist({ props }) {
 
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.infoSong.nameSong) {
-      playSound({ uri: linkSong });
-      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(
-        playSong({
-          id: id,
-          img: "",
-          nameSong: nameSong,
-          nameAuthor: nameAuthor,
-          linkSong: linkSong,
-        })
-      );
+      playSound(props);
     } else {
     }
   };
@@ -83,7 +77,10 @@ export default function CardSongForPlaylist({ props }) {
 
   return (
     <SafeAreaView>
-      <TouchableOpacity onPress={() => playSoundAction()}>
+      <TouchableOpacity
+        delayPressIn={1000}
+        onPressOut={() => playSoundAction()}
+      >
         <View
           style={{
             width: "100%",
@@ -91,7 +88,7 @@ export default function CardSongForPlaylist({ props }) {
             paddingVertical: 5,
             marginBottom: 15,
             overflow: "visible",
-            backgroundColor: "gray",
+            backgroundColor: "rgb(15,15,15)",
             borderRadius: 5,
           }}
         >
@@ -103,20 +100,24 @@ export default function CardSongForPlaylist({ props }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={img ?? require("../../assets/gai.jpg")}
+            source={
+              img === null || img === "" || img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: img }
+            }
           />
           <View
             style={{
               flexDirection: "column",
               marginLeft: 15,
               width: 0.55 * width,
-              backgroundColor: "yellow",
+              backgroundColor: "rgb(15,15,15)",
             }}
           >
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={{ fontWeight: "bold" }}
+              style={{ fontWeight: "bold", color: "white" }}
             >
               {props.nameSong}
             </Text>
@@ -125,7 +126,7 @@ export default function CardSongForPlaylist({ props }) {
               ellipsizeMode="tail"
               style={{
                 marginTop: 2,
-                color: "rgba(0, 0, 0, 0.6)",
+                color: "#999999",
                 fontSize: 12,
               }}
             >
@@ -154,7 +155,7 @@ export default function CardSongForPlaylist({ props }) {
                 toggleModal();
               }}
             >
-              <Ionicons name="ellipsis-vertical-outline" size={24} />
+              <Ionicons name="ellipsis-vertical" color="#999999" size={24} />
             </TouchableOpacity>
             {/* <Menu
                 renderer={Popover}
@@ -217,7 +218,7 @@ export default function CardSongForPlaylist({ props }) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "#1A1A1A",
               width: "100%",
               height: 0.5 * height,
               top: 0.5 * height + 20,
@@ -257,7 +258,11 @@ export default function CardSongForPlaylist({ props }) {
                   borderRadius: 5,
                   zIndex: 2,
                 }}
-                source={img ?? require("../../assets/gai.jpg")}
+                source={
+                  img === null || img === "" || img === "null"
+                    ? require("../../assets/unknow.jpg")
+                    : { uri: img }
+                }
               />
               <View
                 style={{
@@ -269,7 +274,7 @@ export default function CardSongForPlaylist({ props }) {
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
-                  style={{ fontWeight: "bold" }}
+                  style={{ fontWeight: "bold", color: "white" }}
                 >
                   {props.nameSong}
                 </Text>
@@ -278,7 +283,7 @@ export default function CardSongForPlaylist({ props }) {
                   ellipsizeMode="tail"
                   style={{
                     marginTop: 2,
-                    color: "rgba(0, 0, 0, 0.6)",
+                    color: "#A3A1A2",
                     fontSize: 12,
                   }}
                 >
@@ -302,12 +307,12 @@ export default function CardSongForPlaylist({ props }) {
                     paddingVertical: 5,
                   }}
                 >
-                  <Ionicons color="black" name="download-outline" size={30} />
+                  <Ionicons color="white" name="download-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -325,7 +330,7 @@ export default function CardSongForPlaylist({ props }) {
                   }}
                 >
                   <Ionicons
-                    color="black"
+                    color="white"
                     name="musical-notes-outline"
                     size={30}
                   />
@@ -333,7 +338,7 @@ export default function CardSongForPlaylist({ props }) {
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -350,12 +355,12 @@ export default function CardSongForPlaylist({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="list-outline" size={30} />
+                  <Ionicons color="white" name="list-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -364,7 +369,16 @@ export default function CardSongForPlaylist({ props }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  dispatch(
+                    getInfoAuthor({
+                      idUser: props.idUser,
+                    })
+                  );
+                  navigation.navigate("Author");
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -372,12 +386,12 @@ export default function CardSongForPlaylist({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="person-outline" size={30} />
+                  <Ionicons color="white" name="person-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -394,12 +408,12 @@ export default function CardSongForPlaylist({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="trash-outline" size={30} />
+                  <Ionicons color="red" name="trash-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "red",
                       marginLeft: 15,
                     }}
                   >

@@ -74,6 +74,13 @@ namespace backend.Controllers
             {
                 return NotFound();
             }
+            var userExists = await _context.Users.AnyAsync(u => u.Id == idUser);
+            if (!userExists)
+            {
+                // Trả về Bad Request nếu idUser không tồn tại
+                return NotFound("User not found");
+            }
+
 
             var user = await _context.Users
                    .Where(u => u.Id == idUser)
@@ -81,7 +88,9 @@ namespace backend.Controllers
                    {
                        Username = u.UserName,
                        Email = u.Email,
-                       Name = u.Name
+                       Name = u.Name,
+                       PhoneNumber = u.PhoneNumber,
+                       Avatar = u.Avatar
                    })
                    .FirstOrDefaultAsync();
 
@@ -90,7 +99,35 @@ namespace backend.Controllers
                 .ToListAsync();
 
             var playlists = await _context.Playlist
-                .Where(p => p.IdUser == idUser)
+                .Where(ps => ps.IdUser == idUser)
+                .Select(p => new
+                {
+
+                    Playlist = p,
+                    TrackCount = _context.PlaylistSongs.Count(ps => ps.PlaylistId == p.Id),
+                    IdSongList = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong).ToList(),
+                    FirstSongId = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong)
+                        .FirstOrDefault()
+                })
+                .Select(p => new PlaylistModel
+                {
+                    Id = p.Playlist.Id,
+                    IdUser = p.Playlist.IdUser,
+                    NamePlaylist = p.Playlist.NamePlaylist,
+                    CreatedAt = p.Playlist.CreatedAt,
+                    Access = p.Playlist.Access,
+                    NumberTrack = p.TrackCount.ToString(),
+                    IdSongList = p.IdSongList,
+                    ImgFirstSong = _context.Songs
+                        .Where(s => s.Id == p.FirstSongId)
+                        .Select(s => s.Img)
+                        .FirstOrDefault() ?? ""
+                })
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
             var result = new
@@ -98,6 +135,43 @@ namespace backend.Controllers
                 User = user,
                 Songs = songs,
                 Playlists = playlists
+            };
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("getUserByUsername")]
+        public async Task<ActionResult<IEnumerable<Song>>> GetUserByUsername(string username)
+        {
+
+            if (_context.Songs == null)
+            {
+                return NotFound();
+            }
+            var userExists = await _context.Users.AnyAsync(u => u.UserName == username);
+            if (!userExists)
+            {
+                // Trả về Bad Request nếu idUser không tồn tại
+                return NotFound("User not found");
+            }
+
+
+            var user = await _context.Users
+                   .Where(u => u.UserName == username)
+                   .Select(u => new UserProfileModel
+                   {
+                       Username = u.UserName,
+                       Email = u.Email,
+                       Name = u.Name,
+                       PhoneNumber = u.PhoneNumber,
+                       Avatar = u.Avatar
+                   })
+                   .FirstOrDefaultAsync();
+
+            var result = new
+            {
+                User = user
             };
 
             return Ok(result);
@@ -128,6 +202,13 @@ namespace backend.Controllers
             //var jObject = JObject.Parse(json);
             //var user = await _userManager.GetUserAsync(User);
             //var idUser = user.Id;
+
+            var existingSong = await _context.Songs.FirstOrDefaultAsync(s => s.Id == int.Parse(idSong));
+            if (existingSong == null)
+            {
+                // Nếu không tìm thấy bản ghi Song, trả về lỗi hoặc thông báo rằng idSong không tồn tại.
+                return BadRequest("idSong không tồn tại.");
+            }
             var existingSongLike = await _context.SongLike
                 .FirstOrDefaultAsync(sl => sl.IdUser == t && sl.IdSong == int.Parse(idSong));
             if (existingSongLike != null)
@@ -363,6 +444,24 @@ namespace backend.Controllers
          * 
         */
 
+        [Authorize]
+        [HttpGet("GetSongsOfUser")]
+        public async Task<ActionResult<IEnumerable<Song>>> GetSongsOfUser()
+        {
+            if (_context.Songs == null)
+            {
+                return NotFound();
+            }
+            var identity = (ClaimsIdentity)User.Identity;
+            var idUser = identity.FindFirst("idUser").Value;
+            var songsOfUser = await _context.Songs
+                .Where(song => song.IdUser == idUser)
+                .OrderByDescending(song => song.Id)
+                .ToListAsync();
+
+            return songsOfUser;
+        }
+
 
         // GET: api/Songs/5
         //[Authorize]
@@ -417,7 +516,7 @@ namespace backend.Controllers
         // POST: api/Songs
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
-        [HttpPost]
+        [HttpPost("PostSongFromUser")]
         public async Task<ActionResult<Song>> PostSongFromUser(SongModel songModel)
         {
             if (_context.Songs == null)
@@ -438,8 +537,12 @@ namespace backend.Controllers
             await _context.SaveChangesAsync();
 
 
+            var songsOfUser = await _context.Songs
+                .Where(song => song.IdUser == idUser)
+                .OrderByDescending(song => song.Id)
+                .ToListAsync();
 
-            return CreatedAtAction("GetSong", new { id = song.Id }, song);
+            return Ok(songsOfUser);
         }
 
         // DELETE: api/Songs/5
@@ -462,7 +565,71 @@ namespace backend.Controllers
             _context.Songs.Remove(song);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            var songsOfUser = await _context.Songs
+                .Where(song => song.IdUser == idUser)
+                .OrderByDescending(song => song.Id)
+                .ToListAsync();
+
+            return Ok(songsOfUser);
+        }
+
+        [HttpGet("SearchSongs")]
+        public async Task<ActionResult<object>> SearchSongs(string searchTerm)
+        {
+            if (_context.Songs == null)
+            {
+                return Problem("Entity set 'SoundCloudContext.Songs' is null.");
+            }
+
+            // Tìm kiếm bài hát theo tên chứa chuỗi `searchTerm`
+            var songs = await _context.Songs
+                .Where(song => song.NameSong.Contains(searchTerm) && song.Access == "public")
+                .Select(song => song)
+                .ToListAsync();
+
+            // Tìm kiếm tên tác giả chứa chuỗi `searchTerm`
+            var authors = await _context.Users
+                .Where(user => user.Name.Contains(searchTerm))
+                .Select(user => new
+                {
+                    Id = user.Id,
+                    Avatar = user.Avatar,
+                    Name = user.Name,
+                    NumberTrack = _context.Songs
+                        .Count(song => song.IdUser == user.Id && song.Access == "public")
+                })
+                .ToListAsync();
+            var playlists = await _context.Playlist
+                .Where(playlist => playlist.NamePlaylist.Contains(searchTerm) && playlist.Access == "public")
+                .Select(p => new
+                {
+                    Playlist = p,
+                    TrackCount = _context.PlaylistSongs.Count(ps => ps.PlaylistId == p.Id),
+                    IdSongList = _context.PlaylistSongs
+                                    .Where(ps => ps.PlaylistId == p.Id)
+                                    .Select(ps => ps.IdSong).ToList(),
+                    FirstSongId = _context.PlaylistSongs
+                                    .Where(ps => ps.PlaylistId == p.Id)
+                                    .Select(ps => ps.IdSong)
+                                    .FirstOrDefault()
+                })
+                .Select(p => new PlaylistModel
+                {
+                    Id = p.Playlist.Id,
+                    IdUser = p.Playlist.IdUser,
+                    NamePlaylist = p.Playlist.NamePlaylist,
+                    CreatedAt = p.Playlist.CreatedAt,
+                    Access = p.Playlist.Access,
+                    NumberTrack = p.TrackCount.ToString(),
+                    IdSongList = p.IdSongList,
+                    ImgFirstSong = _context.Songs
+                                    .Where(s => s.Id == p.FirstSongId)
+                                    .Select(s => s.Img)
+                                    .FirstOrDefault() ?? ""
+                })
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+            return new { Songs = songs, Authors = authors, Playlists = playlists };
         }
 
         private bool SongExists(int id)

@@ -18,9 +18,9 @@ export default MyComponent = React.memo(function () {
       const minutes = Math.floor((seconds % 3600) / 60);
       const remainingSeconds = seconds % 60;
 
-      const formattedTime = `${minutes}:${
-        remainingSeconds < 10 ? "0" : ""
-      }${remainingSeconds}`;
+      const formattedTime = `${hours > 0 ? hours + ":" : ""}${
+        minutes < 10 ? "0" : ""
+      }${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
 
       return formattedTime;
     }
@@ -36,8 +36,9 @@ export default MyComponent = React.memo(function () {
       <Slider
         maximumValue={duration}
         minimumValue={0}
-        minimumTrackTintColor="#307ecc"
-        maximumTrackTintColor="#000000"
+        minimumTrackTintColor="#F57C1F"
+        maximumTrackTintColor="#A3A1A2"
+        thumbTintColor="#F57C1F"
         step={1000}
         value={curTime}
         style={{ width: "100%" }}
