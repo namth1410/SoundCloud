@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useDispatch, useSelector } from "react-redux";
 import { getAllSong } from "../redux/songSlice";
@@ -32,9 +33,12 @@ export default function SignIn({ navigation }) {
   const handleSignIn = async () => {
     try {
       Keyboard.dismiss();
-      await dispatch(signIn(createInfoUser(username, password))).then(() => {
-        dispatch(getAllSong());
-      });
+      await dispatch(signIn(createInfoUser(username, password)))
+        .then((result) => {
+          dispatch(getAllSong());
+          AsyncStorage.setItem("loginStatus", JSON.stringify(result.meta));
+        })
+
     } catch (error) {
       console.log(error);
     }
@@ -52,7 +56,9 @@ export default function SignIn({ navigation }) {
     navigation.navigate("Main");
   };
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+
+  }, []);
 
   // useEffect(() => {
   //   if (userInfo.username) {
@@ -79,7 +85,8 @@ export default function SignIn({ navigation }) {
           <TouchableOpacity
             onPress={async () => {
               await dispatch(signIn(createInfoUser("string1", "string1"))).then(
-                () => {
+                (result) => {
+                  AsyncStorage.setItem("loginStatus", JSON.stringify(result.meta));
                   dispatch(getAllSong());
                 }
               );

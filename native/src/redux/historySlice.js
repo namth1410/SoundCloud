@@ -69,6 +69,7 @@ export const historySlice = createSlice({
         state.error = "";
       })
       .addCase(deleteHistoryAllAsync.fulfilled, (state, action) => {
+        state.historyList = [];
         state.loading = false;
         state.error = "";
         success = true;

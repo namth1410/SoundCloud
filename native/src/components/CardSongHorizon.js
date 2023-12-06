@@ -25,6 +25,8 @@ import {
   deleteSongLike,
   deleteSongLikeAsync,
 } from "../redux/songLikeSlice";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { convertTimeTrackToString } from "../ultis/FunctionHelper";
 
 import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
 export default function CardSongHorizon({ props }) {
@@ -154,16 +156,15 @@ export default function CardSongHorizon({ props }) {
         paddingLeft: 10,
         paddingVertical: 5,
         overflow: "visible",
-        backgroundColor: "#B9B4C7",
+        backgroundColor: "rgb(15,15,15)",
         borderRadius: 5,
       }}
     >
       <TouchableOpacity
+        delayPressIn={1000}
         style={{ flexDirection: "row" }}
         onPressOut={() => {
-          playSound({ uri: linkSong });
-          dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-          dispatch(playSong(props));
+          playSound(props);
         }}
       >
         <Image
@@ -174,7 +175,11 @@ export default function CardSongHorizon({ props }) {
             borderRadius: 5,
             zIndex: 2,
           }}
-          source={img ?? require("../../assets/gai.jpg")}
+          source={
+            img === null || img === "" || img === "null"
+              ? require("../../assets/unknow.jpg")
+              : { uri: img }
+          }
         />
         <View
           style={{
@@ -186,21 +191,40 @@ export default function CardSongHorizon({ props }) {
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontWeight: "bold" }}
+            style={{ fontWeight: "bold", color: "white" }}
           >
             {nameSong}
           </Text>
-          <Text
-            numberOfLines={1}
-            ellipsizeMode="tail"
-            style={{
-              marginTop: 2,
-              color: "rgba(0, 0, 0, 0.6)",
-              fontSize: 12,
-            }}
-          >
-            {nameAuthor}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{
+                marginTop: 2,
+                color: "#A3A1A2",
+                fontSize: 12,
+              }}
+            >
+              {nameAuthor}
+            </Text>
+            <Icon
+              style={{ marginHorizontal: 5 }}
+              name="circle"
+              size={4}
+              color="#A3A1A2"
+            />
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{
+                marginTop: 2,
+                color: "#A3A1A2",
+                fontSize: 12,
+              }}
+            >
+              {convertTimeTrackToString(props.time)}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
 
@@ -217,9 +241,9 @@ export default function CardSongHorizon({ props }) {
           }}
         >
           <Ionicons
-            name="ellipsis-vertical-outline"
-            size={28}
-            color="#000"
+            name="ellipsis-vertical"
+            size={20}
+            color="#A3A1A2"
             style={{
               textAlignVertical: "center",
             }}

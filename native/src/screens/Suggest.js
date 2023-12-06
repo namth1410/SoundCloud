@@ -3,12 +3,12 @@ import React, { useEffect, useRef } from "react";
 import {
   Dimensions,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
@@ -28,14 +28,11 @@ export default function Suggest({ navigation }) {
   }, [audio.playing]);
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{ flex: 1 }}>
       <View
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: width,
-          height: 0.9 * height,
+          flex: 1,
+          backgroundColor: "rgb(15,15,15)",
         }}
       >
         <View
@@ -49,7 +46,7 @@ export default function Suggest({ navigation }) {
             paddingRight: 10,
           }}
         >
-          <Text style={{ color: "black", fontWeight: "bold", fontSize: 20 }}>
+          <Text style={{ color: "#F57C1F", fontWeight: "bold", fontSize: 20 }}>
             Danh sách phát
           </Text>
           <TouchableWithoutFeedback
@@ -71,6 +68,7 @@ export default function Suggest({ navigation }) {
             overflow: "visible",
             backgroundColor: "#B9B4C7",
             borderRadius: 5,
+            marginTop: 7,
           }}
         >
           <Image
@@ -81,7 +79,13 @@ export default function Suggest({ navigation }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={require("../../assets/gai.jpg")}
+            source={
+              playSongStore.infoSong.img === null ||
+              playSongStore.infoSong.img === "" ||
+              playSongStore.infoSong.img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: playSongStore.infoSong.img }
+            }
           />
           <View
             style={{
@@ -134,9 +138,10 @@ export default function Suggest({ navigation }) {
         <Text
           style={{
             paddingLeft: 10,
-            color: "black",
+            color: "white",
             fontWeight: "bold",
-            fontSize: 14,
+            fontSize: 16,
+            marginTop: 12,
           }}
         >
           Phát tiếp theo

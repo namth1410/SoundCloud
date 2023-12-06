@@ -29,21 +29,6 @@ export const songSlice = createSlice({
         state.loading = false;
         state.error = "Lấy tất cả bài hát lỗi";
         success = false;
-      })
-
-      .addCase(postSongFromUserAsync.pending, (state, action) => {
-        state.loading = true;
-        state.error = "";
-      })
-      .addCase(postSongFromUserAsync.fulfilled, (state, action) => {
-        state.loading = false;
-        state.error = "";
-        success = true;
-      })
-      .addCase(postSongFromUserAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = "Tải bài hát lên MYSQL lỗi";
-        success = false;
       });
   },
 });
@@ -58,48 +43,7 @@ export const getAllSong = createAsyncThunk("song/getAllSong", async () => {
   }
 });
 
-export const postSongFromUserAsync = createAsyncThunk(
-  "song/postSongFromUser",
-  async (info) => {
-    try {
-      const config = {
-        headers: {
-          Authorization: "Bearer " + info.token,
-        },
-      };
 
-      const response = await axios.post(`${BASE_URL}/api/Songs`, info, config);
-
-      return response.data;
-    } catch (error) {
-      console.error("Lỗi khi tải lên bài hát MySQL: ", error.response);
-      throw error;
-    }
-  }
-);
-
-export const deleteSongFromUserAsync = createAsyncThunk(
-  "song/deleteSongFromUserAsync",
-  async (info) => {
-    try {
-      const config = {
-        headers: {
-          Authorization: "Bearer " + info.token,
-        },
-        params: {
-          idSong: info.idSong.toString(),
-        },
-      };
-
-      const response = await axios.delete(`${BASE_URL}/api/Songs`, config);
-
-      return response.data;
-    } catch (error) {
-      console.error("Lỗi khi xóa bài hát: ", error);
-      throw error;
-    }
-  }
-);
 
 export const {} = songSlice.actions;
 

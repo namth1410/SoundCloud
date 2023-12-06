@@ -10,6 +10,8 @@ namespace backend.Models
         public string Email { get; set; }
         [Required]
         public string Name { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Avatar { get; set; }
         [Required]
         public string Token { get; set; }
     }

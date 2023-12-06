@@ -54,17 +54,7 @@ export default function CardSongForHistory({ props }) {
 
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.infoSong.nameSong) {
-      playSound({ uri: linkSong });
-      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(
-        playSong({
-          id: id,
-          img: "",
-          nameSong: nameSong,
-          nameAuthor: nameAuthor,
-          linkSong: linkSong,
-        })
-      );
+      playSound(props);
     } else {
     }
   };
@@ -77,7 +67,10 @@ export default function CardSongForHistory({ props }) {
 
   return (
     <SafeAreaView>
-      <TouchableOpacity onPress={() => playSoundAction()}>
+      <TouchableOpacity
+        delayPressIn={1000}
+        onPressOut={() => playSoundAction()}
+      >
         <View
           style={{
             width: "100%",
@@ -85,7 +78,7 @@ export default function CardSongForHistory({ props }) {
             paddingVertical: 5,
             marginBottom: 15,
             overflow: "visible",
-            backgroundColor: "gray",
+            backgroundColor: "rgb(15,15,15)",
             borderRadius: 5,
           }}
         >
@@ -97,20 +90,24 @@ export default function CardSongForHistory({ props }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={img ?? require("../../assets/gai.jpg")}
+            source={
+              props.img === null || props.img === "" || props.img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: props.img }
+            }
           />
           <View
             style={{
               flexDirection: "column",
               marginLeft: 15,
               width: 0.55 * width,
-              backgroundColor: "gray",
+              backgroundColor: "rgb(15,15,15)",
             }}
           >
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={{ fontWeight: "bold" }}
+              style={{ fontWeight: "bold", color: "white" }}
             >
               {props.nameSong}
             </Text>
@@ -119,7 +116,7 @@ export default function CardSongForHistory({ props }) {
               ellipsizeMode="tail"
               style={{
                 marginTop: 2,
-                color: "rgba(0, 0, 0, 0.6)",
+                color: "#A3A1A2",
                 fontSize: 12,
               }}
             >
@@ -136,7 +133,7 @@ export default function CardSongForHistory({ props }) {
           >
             <TouchableOpacity style={{ paddingLeft: 10 }}>
               {isLiked ? (
-                <Ionicons name="heart" color="orange" size={24} />
+                <Ionicons name="heart" color="pink" size={24} />
               ) : (
                 // <Ionicons name="heart-outline" size={24} />
                 <></>
@@ -148,7 +145,7 @@ export default function CardSongForHistory({ props }) {
                 toggeleModal();
               }}
             >
-              <Ionicons name="ellipsis-vertical-outline" size={24} />
+              <Ionicons color="#A3A1A2" name="ellipsis-vertical" size={24} />
             </TouchableOpacity>
             {/* <Menu
                 renderer={Popover}
@@ -211,7 +208,7 @@ export default function CardSongForHistory({ props }) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "rgb(50,50,50)",
               width: "100%",
               height: 0.5 * height,
               top: 0.5 * height + 20,
@@ -226,7 +223,7 @@ export default function CardSongForHistory({ props }) {
               style={{
                 width: 0.2 * width,
                 height: 3,
-                backgroundColor: "#000",
+                backgroundColor: "white",
                 marginTop: 5,
                 borderRadius: 5,
               }}
@@ -251,7 +248,11 @@ export default function CardSongForHistory({ props }) {
                   borderRadius: 5,
                   zIndex: 2,
                 }}
-                source={img ?? require("../../assets/gai.jpg")}
+                source={
+                  props.img === null || props.img === "" || props.img === "null"
+                    ? require("../../assets/unknow.jpg")
+                    : { uri: props.img }
+                }
               />
               <View
                 style={{
@@ -263,7 +264,7 @@ export default function CardSongForHistory({ props }) {
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
-                  style={{ fontWeight: "bold" }}
+                  style={{ fontWeight: "bold", color: "white" }}
                 >
                   {props.nameSong}
                 </Text>
@@ -272,7 +273,7 @@ export default function CardSongForHistory({ props }) {
                   ellipsizeMode="tail"
                   style={{
                     marginTop: 2,
-                    color: "rgba(0, 0, 0, 0.6)",
+                    color: "#A3A1A2",
                     fontSize: 12,
                   }}
                 >
@@ -296,12 +297,12 @@ export default function CardSongForHistory({ props }) {
                     paddingVertical: 5,
                   }}
                 >
-                  <Ionicons color="black" name="download-outline" size={30} />
+                  <Ionicons color="white" name="download-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -319,7 +320,7 @@ export default function CardSongForHistory({ props }) {
                   }}
                 >
                   <Ionicons
-                    color="black"
+                    color="white"
                     name="musical-notes-outline"
                     size={30}
                   />
@@ -327,7 +328,7 @@ export default function CardSongForHistory({ props }) {
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -344,12 +345,12 @@ export default function CardSongForHistory({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="list-outline" size={30} />
+                  <Ionicons color="white" name="list-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -366,12 +367,12 @@ export default function CardSongForHistory({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="person-outline" size={30} />
+                  <Ionicons color="white" name="person-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -388,12 +389,12 @@ export default function CardSongForHistory({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="trash-outline" size={30} />
+                  <Ionicons color="red" name="trash-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "red",
                       marginLeft: 15,
                     }}
                   >

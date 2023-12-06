@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+
 import { RectButton } from "react-native-gesture-handler";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -14,26 +16,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
 import { playSong } from "../redux/playSongSlice";
 import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
+import { addHistoryAsync } from "../redux/historySlice";
 const CardSongSwipeableRow = ({ props }) => {
   const { id, img, nameSong, nameAuthor, linkSong } = props;
   const playSongStore = useSelector((state) => state.playSongRedux);
   const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
+  const userInfoRedux = useSelector((state) => state.userInfo);
   const dispatch = useDispatch();
   const { playSound } = useAudio();
 
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.infoSong.nameSong) {
-      playSound({ uri: linkSong });
-      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(
-        playSong({
-          id: id,
-          img: "",
-          nameSong: nameSong,
-          nameAuthor: nameAuthor,
-          linkSong: linkSong,
-        })
-      );
+      playSound(props);
     } else {
     }
   };
@@ -76,7 +70,8 @@ const CardSongSwipeableRow = ({ props }) => {
               removeSongFromSuggestList();
             }}
           >
-            <Ionicons name="trash-bin-outline" size={32} color="red" />
+            {/* <Ionicons name="trash-bin-outline" size={32} color="red" /> */}
+            <Icon name="trash" size={32} color="red" />
           </TouchableOpacity>
         </Animated.View>
       </RectButton>
@@ -91,12 +86,13 @@ const CardSongSwipeableRow = ({ props }) => {
           flexDirection: "row",
           padding: 5,
           overflow: "visible",
+          marginVertical: 5,
         }}
       >
         <TouchableOpacity
-          delayPressIn={50}
+          delayPressIn={1000}
           style={{ flex: 1 }}
-          onPress={() => playSoundAction()}
+          onPressOut={() => playSoundAction()}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Image
@@ -107,7 +103,11 @@ const CardSongSwipeableRow = ({ props }) => {
                 borderRadius: 5,
                 zIndex: 2,
               }}
-              source={img ?? require("../../assets/test.jpg")}
+              source={
+                img === null || img === "" || img === "null"
+                  ? require("../../assets/unknow.jpg")
+                  : { uri: img }
+              }
             />
             <View
               style={{
@@ -119,7 +119,7 @@ const CardSongSwipeableRow = ({ props }) => {
               <Text
                 numberOfLines={1}
                 ellipsizeMode="tail"
-                style={{ fontWeight: "bold" }}
+                style={{ fontWeight: "bold", color: "white" }}
               >
                 {nameSong}
               </Text>
@@ -128,7 +128,7 @@ const CardSongSwipeableRow = ({ props }) => {
                 ellipsizeMode="tail"
                 style={{
                   marginTop: 2,
-                  color: "rgba(0, 0, 0, 0.6)",
+                  color: "#A3A1A2",
                   fontSize: 12,
                 }}
               >
@@ -145,45 +145,6 @@ const CardSongSwipeableRow = ({ props }) => {
             textAlignVertical: "center",
           }}
         />
-        {/* <Menu
-        renderer={Popover}
-          rendererProps={{ placement: "bottom" }}
-          style={{ backgroundColor: "pink", justifyContent: "center" }}
-        >
-          <MenuTrigger
-            customStyles={{
-              triggerWrapper: {},
-            }}
-          >
-
-          </MenuTrigger>
-          <MenuOptions
-            style={{
-              overflow: "visible",
-              backgroundColor: "blue",
-              borderRadius: 5,
-            }}
-          >
-            <MenuOption onSelect={() => alert(`Save`)} text="Save" />
-            <MenuOption onSelect={() => alert(`Delete`)} text="Delete" />
-          </MenuOptions>
-          <TouchableOpacity
-            onPress={() => {
-              testDeleteSong();
-            }}
-          >
-            <Ionicons
-              name="ellipsis-vertical-outline"
-              size={28}
-              color="#F57C1F"
-              style={{
-                textAlignVertical: "center",
-                backgroundColor: "pink",
-                flex: 1,
-              }}
-            />
-          </TouchableOpacity>
-        </Menu> */}
       </View>
     </Swipeable>
   );

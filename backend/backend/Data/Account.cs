@@ -7,5 +7,6 @@ namespace backend.Data
     public class Account : IdentityUser
     {
         public string Name { get; set; }
+        public string? Avatar { get; set; }
     }
 }

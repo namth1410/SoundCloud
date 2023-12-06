@@ -14,8 +14,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import CardPlaylist from "../components/CardPlaylist";
 import { addPlaylistAsync } from "../redux/playlistSlice";
@@ -86,15 +86,10 @@ export default function Playlist({}) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar
-        style="light"
-        backgroundColor="#132043"
-        color="white"
-      ></StatusBar>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "rgb(15,15,15)" }}>
       <View
         style={{
-          backgroundColor: "#132043",
+          flex: 1,
         }}
       >
         <Text
@@ -110,7 +105,7 @@ export default function Playlist({}) {
           Playlist
         </Text>
 
-        <View style={{ padding: 10, height: 0.89 * height }}>
+        <View style={{ flex: 1, paddingBottom: 0, paddingHorizontal: 10 }}>
           <TouchableOpacity
             onPress={() => {
               toggleModal();
@@ -125,15 +120,15 @@ export default function Playlist({}) {
             >
               <View
                 style={{
-                  width: 50,
-                  height: 50,
-                  backgroundColor: "gray",
+                  width: 65,
+                  height: 65,
+                  backgroundColor: "rgb(50,50,50)",
                   borderRadius: 5,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: 24, color: "white" }}>+</Text>
+                <Text style={{ fontSize: 24, color: "#9D9F9E" }}>+</Text>
               </View>
               <Text
                 style={{

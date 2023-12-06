@@ -63,7 +63,8 @@ namespace backend.Repositories
             {
                 Username = user.UserName,
                 Email = user.Email,
-                Name = user.Name
+                Name = user.Name,
+                Avatar = user.Avatar,
             };
 
             userProfile.Token = new JwtSecurityTokenHandler().WriteToken(token);
@@ -76,7 +77,8 @@ namespace backend.Repositories
             var user = new Account
             {
                 Email = model.Username,
-                UserName = model.Username
+                UserName = model.Username,
+                Name = model.Name,
             };
 
             return await userManager.CreateAsync(user, model.Password);

@@ -7,6 +7,7 @@ const initialState = {
   name: "",
   email: "",
   token: "",
+  avatar: "",
   loading: false,
   error: "",
   success: false,
@@ -26,6 +27,7 @@ export const userSlice = createSlice({
         state.username = action.payload.value.username;
         state.name = action.payload.value.name;
         state.email = action.payload.value.email;
+        state.avatar = action.payload.value.avatar;
         state.token = action.payload.value.token;
         state.loading = false;
         state.error = "";
@@ -43,6 +45,7 @@ export const userSlice = createSlice({
       .addCase(signUp.fulfilled, (state, action) => {
         state.username = "";
         state.token = "";
+        state.avatar = "";
         state.loading = false;
         state.error = "";
         success = true;

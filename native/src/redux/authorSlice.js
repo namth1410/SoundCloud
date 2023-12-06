@@ -7,6 +7,7 @@ const initialState = {
   playlistList: [],
   nameAuthor: "",
   emailAuthor: "",
+  avatar: "",
   loading: false,
   error: "",
   success: false,
@@ -28,6 +29,7 @@ export const authorSlice = createSlice({
         state.playlistList = [...action.payload.playlists];
         state.nameAuthor = action.payload.user.name;
         state.emailAuthor = action.payload.user.email;
+        state.avatar = action.payload.user.avatar;
         state.loading = false;
         state.error = "";
         success = true;

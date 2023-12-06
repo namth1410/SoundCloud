@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useAudio } from "../common/AudioProvider";
 import { addHistoryAsync } from "../redux/historySlice";
 import { playSong } from "../redux/playSongSlice";
-export default function Card({ props }) {
+export default function CardSong({ props }) {
   const { id, img, nameSong, nameAuthor, linkSong } = props;
   const playSongStore = useSelector((state) => state.playSongRedux);
   const userInfoRedux = useSelector((state) => state.userInfo);
@@ -12,15 +12,13 @@ export default function Card({ props }) {
   const { playSound } = useAudio();
   const playSoundAction = async () => {
     if (nameSong !== playSongStore.infoSong.nameSong) {
-      playSound({ uri: linkSong });
-      dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-      dispatch(playSong(props));
+      playSound(props);
     } else {
     }
   };
 
   return (
-    <TouchableOpacity onPressIn={() => playSoundAction()}>
+    <TouchableOpacity delayPressIn={1000} onPressOut={() => playSoundAction()}>
       <View style={{ width: 130 }}>
         <Image
           style={{
@@ -30,25 +28,13 @@ export default function Card({ props }) {
             borderRadius: 5,
             zIndex: 2,
           }}
-          source={img ?? require("../../assets/musique.jpg")}
+          src={img ?? require("../../assets/musique.jpg")}
         />
-        <Image
-          blurRadius={100}
-          style={{
-            resizeMode: "contain",
-            width: 120,
-            height: 120,
-            borderRadius: 5,
-            top: 8,
-            left: 8,
-            position: "absolute",
-          }}
-          source={img}
-        />
+
         <Text
           numberOfLines={2}
           ellipsizeMode="tail"
-          style={{ fontWeight: "bold", marginTop: 15 }}
+          style={{ fontWeight: "bold", marginTop: 15, color: "white" }}
         >
           {nameSong}
         </Text>
@@ -57,7 +43,7 @@ export default function Card({ props }) {
           ellipsizeMode="tail"
           style={{
             marginTop: 2,
-            color: "rgba(0, 0, 0, 0.6)",
+            color: "rgba(255, 255, 255, 0.6)",
             fontSize: 12,
           }}
         >

@@ -39,6 +39,34 @@ namespace backend.Controllers
 
             var playlists = await _context.Playlist
                 .Where(ps => ps.IdUser == idUser)
+                .Select(p => new
+                {
+
+                    Playlist = p,
+                    TrackCount = _context.PlaylistSongs.Count(ps => ps.PlaylistId == p.Id),
+                    IdSongList = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong).ToList(),
+                    FirstSongId = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong)
+                        .FirstOrDefault()
+                })
+                .Select(p => new PlaylistModel
+                {
+                    Id = p.Playlist.Id,
+                    IdUser = p.Playlist.IdUser,
+                    NamePlaylist = p.Playlist.NamePlaylist,
+                    CreatedAt = p.Playlist.CreatedAt,
+                    Access = p.Playlist.Access,
+                    NumberTrack = p.TrackCount.ToString(),
+                    IdSongList = p.IdSongList,
+                    ImgFirstSong = _context.Songs
+                        .Where(s => s.Id == p.FirstSongId)
+                        .Select(s => s.Img)
+                        .FirstOrDefault() ?? ""
+                })
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
             return Ok(playlists);
@@ -138,7 +166,36 @@ namespace backend.Controllers
 
             var playlists = await _context.Playlist
                 .Where(ps => ps.IdUser == idUser)
+                .Select(p => new
+                {
+
+                    Playlist = p,
+                    TrackCount = _context.PlaylistSongs.Count(ps => ps.PlaylistId == p.Id),
+                    IdSongList = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong).ToList(),
+                    FirstSongId = _context.PlaylistSongs
+                        .Where(ps => ps.PlaylistId == p.Id)
+                        .Select(ps => ps.IdSong)
+                        .FirstOrDefault()
+                })
+                .Select(p => new PlaylistModel
+                {
+                    Id = p.Playlist.Id,
+                    IdUser = p.Playlist.IdUser,
+                    NamePlaylist = p.Playlist.NamePlaylist,
+                    CreatedAt = p.Playlist.CreatedAt,
+                    Access = p.Playlist.Access,
+                    NumberTrack = p.TrackCount.ToString(),
+                    IdSongList = p.IdSongList,
+                    ImgFirstSong = _context.Songs
+                        .Where(s => s.Id == p.FirstSongId)
+                        .Select(s => s.Img)
+                        .FirstOrDefault() ?? ""
+                })
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
+
             return Ok(playlists);
         }
 

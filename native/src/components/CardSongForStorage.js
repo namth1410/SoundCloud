@@ -35,7 +35,7 @@ export default function CardSongForStorage({ props }) {
   const { id, img, nameAuthor } = props;
   const { width, height } = Dimensions.get("screen");
   const navigation = useNavigation();
-  const { playSound, removeSong } = useAudio();
+  const { playSound, removeSongFromStorage } = useAudio();
   const songLikeRedux = useSelector((state) => state.songLikeRedux);
   const userInfoRedux = useSelector((state) => state.userInfo);
   const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
@@ -80,7 +80,7 @@ export default function CardSongForStorage({ props }) {
             width: "100%",
             flexDirection: "row",
             paddingVertical: 7,
-            backgroundColor: "gray",
+            backgroundColor: "rgb(15,15,15)",
             marginBottom: 15,
             overflow: "visible",
             borderRadius: 5,
@@ -94,7 +94,11 @@ export default function CardSongForStorage({ props }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={require("../../assets/gai.jpg")}
+            src={
+              img === null || img === "" || img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: img }
+            }
           />
 
           <Image
@@ -108,7 +112,11 @@ export default function CardSongForStorage({ props }) {
               top: 10,
               left: 5,
             }}
-            source={require("../../assets/gai.jpg")}
+            src={
+              img === null || img === "" || img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: img }
+            }
           />
           <View
             style={{
@@ -269,14 +277,15 @@ export default function CardSongForStorage({ props }) {
   };
 
   const play = () => {
-    playSound({ uri: props.linkSong });
-    dispatch(addHistoryAsync({ ...props, token: userInfoRedux.token }));
-    dispatch(playSong(props));
+    playSound(props);
   };
 
   const addSongToQueue = () => {
     let newSuggestSongList = [...suggestSongRedux.suggestSongList];
-    if (suggestSongRedux.suggestSongList.length === 0) {
+    if (
+      suggestSongRedux.suggestSongList.length === 0 &&
+      Object.keys(playSongStore.infoSong).length === 0
+    ) {
       play();
     } else {
       const existingSongIndex = suggestSongRedux.suggestSongList.findIndex(
@@ -294,7 +303,7 @@ export default function CardSongForStorage({ props }) {
   };
 
   const deleteSong = async () => {
-    removeSong(props);
+    removeSongFromStorage(props);
   };
 
   useEffect(() => {
@@ -310,9 +319,10 @@ export default function CardSongForStorage({ props }) {
           width: "100%",
           flexDirection: "row",
           paddingVertical: 5,
+          paddingLeft: 10,
           marginBottom: 15,
           overflow: "visible",
-          backgroundColor: "gray",
+          backgroundColor: "rgb(15,15,15)",
           borderRadius: 5,
         }}
       >
@@ -330,19 +340,23 @@ export default function CardSongForStorage({ props }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            source={img ?? require("../../assets/gai.jpg")}
+            source={
+              img === null || img === "" || img === "null"
+                ? require("../../assets/unknow.jpg")
+                : { uri: img }
+            }
           />
           <View
             style={{
               flexDirection: "column",
               marginLeft: 15,
-              width: 0.55 * width,
+              width: 0.56 * width,
             }}
           >
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={{ fontWeight: "bold" }}
+              style={{ fontWeight: "bold", color: "white" }}
             >
               {props.nameSong}
             </Text>
@@ -351,7 +365,7 @@ export default function CardSongForStorage({ props }) {
               ellipsizeMode="tail"
               style={{
                 marginTop: 2,
-                color: "rgba(0, 0, 0, 0.6)",
+                color: "#A3A1A2",
                 fontSize: 12,
               }}
             >
@@ -368,7 +382,11 @@ export default function CardSongForStorage({ props }) {
           }}
         >
           <TouchableOpacity style={{ paddingLeft: 10 }}>
-            {isLiked ? <Ionicons name="heart" color="red" size={24} /> : <></>}
+            {isLiked ? (
+              <Ionicons name="heart" color="#F57C1F" size={24} />
+            ) : (
+              <></>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -376,7 +394,7 @@ export default function CardSongForStorage({ props }) {
               toggeleModal();
             }}
           >
-            <Ionicons name="ellipsis-vertical-outline" size={24} />
+            <Ionicons name="ellipsis-vertical" color="white" size={20} />
           </TouchableOpacity>
           {/* <Menu
               renderer={Popover}
@@ -439,7 +457,7 @@ export default function CardSongForStorage({ props }) {
           <View
             {...panResponder.panHandlers}
             style={{
-              backgroundColor: "#F8F0E5",
+              backgroundColor: "rgb(50,50,50)",
               width: "100%",
               height: 0.5 * height,
               top: 0.5 * height + 20,
@@ -479,7 +497,11 @@ export default function CardSongForStorage({ props }) {
                   borderRadius: 5,
                   zIndex: 2,
                 }}
-                source={img ?? require("../../assets/gai.jpg")}
+                source={
+                  img === null || img === "" || img === "null"
+                    ? require("../../assets/unknow.jpg")
+                    : { uri: img }
+                }
               />
               <View
                 style={{
@@ -491,7 +513,7 @@ export default function CardSongForStorage({ props }) {
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
-                  style={{ fontWeight: "bold" }}
+                  style={{ fontWeight: "bold", color: "white" }}
                 >
                   {props.nameSong}
                 </Text>
@@ -500,7 +522,7 @@ export default function CardSongForStorage({ props }) {
                   ellipsizeMode="tail"
                   style={{
                     marginTop: 2,
-                    color: "rgba(0, 0, 0, 0.6)",
+                    color: "#A3A1A2",
                     fontSize: 12,
                   }}
                 >
@@ -529,7 +551,7 @@ export default function CardSongForStorage({ props }) {
                   }}
                 >
                   <Ionicons
-                    color="black"
+                    color="white"
                     name="musical-notes-outline"
                     size={30}
                   />
@@ -537,7 +559,7 @@ export default function CardSongForStorage({ props }) {
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -559,15 +581,15 @@ export default function CardSongForStorage({ props }) {
                   }}
                 >
                   {isLiked ? (
-                    <Ionicons name="heart" color="red" size={30} />
+                    <Ionicons name="heart" color="#F57C1F" size={30} />
                   ) : (
-                    <Ionicons name="heart-outline" size={30} />
+                    <Ionicons name="heart-outline" color="white" size={30} />
                   )}
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -589,12 +611,12 @@ export default function CardSongForStorage({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="list-outline" size={30} />
+                  <Ionicons color="white" name="list-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -620,12 +642,12 @@ export default function CardSongForStorage({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="person-outline" size={30} />
+                  <Ionicons color="white" name="person-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "white",
                       marginLeft: 15,
                     }}
                   >
@@ -642,12 +664,12 @@ export default function CardSongForStorage({ props }) {
                     paddingVertical: 10,
                   }}
                 >
-                  <Ionicons color="black" name="trash-outline" size={30} />
+                  <Ionicons color="red" name="trash-outline" size={30} />
                   <Text
                     style={{
                       fontWeight: "bold",
                       fontSize: 15,
-                      color: "black",
+                      color: "red",
                       marginLeft: 15,
                     }}
                   >
