@@ -102,7 +102,7 @@ app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapHub<Hubs>("/hubs"); // Điều hướng SignalR tới "/chatHub"
+    endpoints.MapHub<Hubs>("/hubs");
     endpoints.MapControllers();
 });
 

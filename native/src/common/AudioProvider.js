@@ -24,22 +24,24 @@ import {
   updateProgress,
 } from "../redux/storageSlice";
 
-const AudioContext = createContext({
-  setModeTogether: () => {},
-  playSound: () => {},
-  pauseSound: () => {},
-  continuePlaySound: () => {},
-  cancelSound: () => {},
-  setPositionAudio: () => {},
-  setLoopAudio: () => {},
-  downloadFromUrl: () => {},
-  removeSongFromStorage: () => {},
-  addSongToNextPlay: () => {},
-  playNextTrack: () => {},
-  playPreTrack: () => {},
-  playRandomTrackList: () => {},
-  playTrackList: () => {},
-});
+const AudioContext =
+  createContext();
+  //   {
+  //   setModeTogether: () => {},
+  //   playSound: () => {},
+  //   pauseSound: () => {},
+  //   continuePlaySound: () => {},
+  //   cancelSound: () => {},
+  //   setPositionAudio: () => {},
+  //   setLoopAudio: () => {},
+  //   downloadFromUrl: () => {},
+  //   removeSongFromStorage: () => {},
+  //   addSongToNextPlay: () => {},
+  //   playNextTrack: () => {},
+  //   playPreTrack: () => {},
+  //   playRandomTrackList: () => {},
+  //   playTrackList: () => {},
+  // }
 
 export const useAudio = () => {
   return useContext(AudioContext);
@@ -59,6 +61,26 @@ export const AudioProvider = ({ children }) => {
   const [curTime, setCurTime] = useState();
   const [playing, setPlaying] = useState(false);
   const [modeTogether, setModeTogether] = useState(false);
+
+  const contextValue = {
+    duration,
+    curTime,
+    playing,
+    modeTogether,
+    setModeTogether,
+    playSound,
+    pauseSound,
+    continuePlaySound,
+    cancelSound,
+    setPositionAudio,
+    downloadFromUrl,
+    removeSongFromStorage,
+    addSongToNextPlay,
+    playNextTrack,
+    playPreTrack,
+    playRandomTrackList,
+    playTrackList,
+  };
 
   useEffect(() => {
     const pre = async () => {
@@ -344,27 +366,7 @@ export const AudioProvider = ({ children }) => {
   };
 
   return (
-    <AudioContext.Provider
-      value={{
-        duration,
-        curTime,
-        playing,
-        modeTogether,
-        setModeTogether,
-        playSound,
-        pauseSound,
-        continuePlaySound,
-        cancelSound,
-        setPositionAudio,
-        downloadFromUrl,
-        removeSongFromStorage,
-        addSongToNextPlay,
-        playNextTrack,
-        playPreTrack,
-        playRandomTrackList,
-        playTrackList,
-      }}
-    >
+    <AudioContext.Provider value={contextValue}>
       {children}
     </AudioContext.Provider>
   );

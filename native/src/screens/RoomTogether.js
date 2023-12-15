@@ -4,11 +4,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
   TextInput,
   Image,
   FlatList,
   ScrollView,
+  BackHandler,
+  Alert,
+  ToastAndroid,
 } from "react-native";
 import {
   HubConnection,
@@ -16,15 +18,23 @@ import {
   LogLevel,
 } from "@microsoft/signalr";
 import { BASE_URL } from "../redux/configAPI";
-import { useSelector } from "react-redux";
 import { Tab, TabView } from "@rneui/themed";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { hubConnection } from "./Feed";
 import { useRoute } from "@react-navigation/native";
+import { useAudio } from "../common/AudioProvider";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { clearDataRoom } from "../redux/dataRoomSlice";
+import { clearUserConnect } from "../redux/userConnectSlice";
 
 export default function RoomTogether({}) {
   const route = useRoute();
   const usernameFriend = route.params ? route.params.data : null;
+  const { modeTogether, setModeTogether } = useAudio();
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
   const scrollViewRef = useRef(null);
   const userInfo = useSelector((state) => state.userInfo);
   const userConnectRedux = useSelector((state) => state.userConnectRedux);
@@ -35,6 +45,43 @@ export default function RoomTogether({}) {
 
   const handleContentSizeChange = (contentWidth, contentHeight) => {
     scrollViewRef.current.scrollToEnd({ animated: true });
+  };
+
+  const exitRoom = () => {
+    setModeTogether(false);
+    navigation.goBack();
+    ToastAndroid.show(
+      `Ngắt kết nối với ${userConnectRedux.userConnect.user.name}`,
+      ToastAndroid.SHORT
+    );
+    dispatch(clearDataRoom());
+    dispatch(clearUserConnect());
+  };
+
+  const handleExit = () => {
+    if (modeTogether) {
+      Alert.alert(
+        "Thoát khỏi chế độ ",
+        `Hủy kết nối với ${userConnectRedux.userConnect.user.name}?`,
+        [
+          {
+            text: "Không",
+            style: "cancel",
+            onPress: () => {},
+          },
+          {
+            text: "Đồng ý",
+            onPress: () => {
+              hubConnection.invoke("CancelConnectionReq", usernameFriend);
+              exitRoom();
+            },
+          },
+        ]
+      );
+      return true;
+    } else {
+      return false;
+    }
   };
 
   const sendMessage = () => {
@@ -70,6 +117,11 @@ export default function RoomTogether({}) {
   };
 
   useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleExit
+    );
+
     hubConnection.on("ReceiveMessage", (message_o) => {
       setMessageStorage((prevMessages) => [
         ...prevMessages,
@@ -77,7 +129,12 @@ export default function RoomTogether({}) {
       ]);
     });
 
+    hubConnection.on("CancelConnection", (message_o) => {
+      exitRoom();
+    });
+
     console.log(userConnectRedux.userConnect);
+    return () => backHandler.remove();
   }, []);
 
   useEffect(() => {
@@ -89,13 +146,42 @@ export default function RoomTogether({}) {
       <View
         style={{
           height: "100%",
+          backgroundColor: "rgb(15,15,15)",
         }}
       >
-        <TouchableOpacity>
-          <Text>Thoát</Text>
-        </TouchableOpacity>
-        <View style={{ backgroundColor: "#ffc", flex: 1 }}>
-          <Tab value={indexTab} onChange={setIndexTab}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            paddingHorizontal: 15,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#F57C1F", fontSize: 16, fontWeight: "bold" }}>
+            Nghe nhạc cùng nhau
+          </Text>
+          <TouchableOpacity
+            onPressOut={() => {
+              handleExit();
+            }}
+            style={{
+              backgroundColor: "#333",
+              borderRadius: 5,
+              paddingHorizontal: 5,
+              paddingVertical: 3,
+            }}
+          >
+            <Text style={{ color: "white" }}>Thoát</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ backgroundColor: "rgb(15,15,15)", flex: 1 }}>
+          <Tab
+            style={{ backgroundColor: "rgb(15,15,15)" }}
+            titleStyle={{ color: "white", fontSize: 12 }}
+            indicatorStyle={{ backgroundColor: "#F57C1F" }}
+            value={indexTab}
+            onChange={setIndexTab}
+          >
             <Tab.Item>Tìm kiếm</Tab.Item>
             <Tab.Item>Track</Tab.Item>
             <Tab.Item>Nhắn tin</Tab.Item>
@@ -120,18 +206,19 @@ export default function RoomTogether({}) {
                     flexDirection: "row",
                     alignItems: "center",
                     padding: 10,
-                    backgroundColor: "#DADDB1",
+                    backgroundColor: "#333",
                     width: "100%",
                     height: "auto",
+                    justifyContent: "center",
                   }}
                 >
-                  <Text style={{ color: "black", marginRight: 10 }}>
+                  <Text style={{ color: "white", marginRight: 10 }}>
                     Trò chuyện cùng
                   </Text>
                   <Text
                     style={{
                       fontWeight: "bold",
-                      color: "black",
+                      color: "white",
                       marginRight: 10,
                     }}
                   >
@@ -157,14 +244,20 @@ export default function RoomTogether({}) {
                 <ScrollView
                   ref={scrollViewRef}
                   onContentSizeChange={handleContentSizeChange}
-                  style={{ height: "80%", flex: 1, marginBottom: 50 }}
+                  style={{
+                    height: "80%",
+                    flex: 1,
+                    marginBottom: 50,
+                    backgroundColor: "rgb(15,15,15)",
+                    paddingHorizontal: 5,
+                  }}
                 >
                   {messageStorage.map((item, index) => {
                     return (
                       <View
                         key={index}
                         style={{
-                          backgroundColor: "pink",
+                          backgroundColor: "#303030",
                           borderRadius: 5,
                           margin: 2,
                           alignSelf:
@@ -178,6 +271,7 @@ export default function RoomTogether({}) {
                             width: "auto",
                             padding: 10,
                             maxWidth: "60%",
+                            color: "white",
                           }}
                         >
                           {item.message}
@@ -191,7 +285,7 @@ export default function RoomTogether({}) {
                   style={{
                     width: "100%",
                     borderWidth: 1,
-                    backgroundColor: "#ccc",
+                    backgroundColor: "#303030",
                     flexDirection: "row",
                     alignItems: "center",
                     position: "absolute",
@@ -204,15 +298,21 @@ export default function RoomTogether({}) {
                     onChangeText={(message) => {
                       setMessage(message);
                     }}
+                    placeholderTextColor="#8C8C8C"
                     value={message}
-                    style={{ flex: 1, marginLeft: 10, fontSize: 16 }}
+                    style={{
+                      flex: 1,
+                      marginLeft: 10,
+                      fontSize: 16,
+                      color: "white",
+                    }}
                   ></TextInput>
                   <TouchableOpacity
                     onPressOut={() => {
                       sendMessage();
                     }}
                   >
-                    <Ionicons name="send" color="blue" size={30} />
+                    <Ionicons name="send" color="#F57C1F" size={30} />
                   </TouchableOpacity>
                 </View>
               </View>
