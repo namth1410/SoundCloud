@@ -36,3 +36,9 @@ yarn-error.*
 
 /native/build
 /backend/backend/Migrations
+/backend/.vs
+/backend/backend/bin
+/native/android
+/backend/backend/obj
+/backend/backend/bin
+/native/package-lock.json

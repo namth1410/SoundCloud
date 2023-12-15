@@ -27,6 +27,7 @@ export default function Home({}) {
   const playSongStore = useSelector((state) => state.playSongRedux);
   const dispatch = useDispatch();
   const navigation = useNavigation();
+
   const topicType = [
     {
       title: "BXH nhạc mới",
@@ -130,18 +131,20 @@ export default function Home({}) {
             justifyContent: "space-between",
           }}
         >
-          <Text
-            style={{
-              fontWeight: "bold",
-              fontSize: 22,
-              color: "#F57C1F",
-              paddingLeft: 12,
-              paddingTop: 6,
-              paddingBottom: 12,
-            }}
-          >
-            {`Home`}
-          </Text>
+          <TouchableOpacity onPress={async () => {}}>
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 22,
+                color: "#F57C1F",
+                paddingLeft: 12,
+                paddingTop: 6,
+                paddingBottom: 12,
+              }}
+            >
+              {`Home`}
+            </Text>
+          </TouchableOpacity>
 
           <View
             style={{

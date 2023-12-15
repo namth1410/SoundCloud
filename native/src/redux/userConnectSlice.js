@@ -12,7 +12,16 @@ const initialState = {
 export const userConnectSlice = createSlice({
   name: "userConnect",
   initialState,
-  reducers: {},
+  reducers: {
+    clearUserConnect: (state, action) => {
+      return {
+        userConnect: {},
+        loading: false,
+        error: "",
+        success: false,
+      };
+    },
+  },
   extraReducers: (builder) => {
     builder
 
@@ -58,6 +67,6 @@ export const getUserByUsername = createAsyncThunk(
   }
 );
 
-export const {} = userConnectSlice.actions;
+export const { clearUserConnect } = userConnectSlice.actions;
 
 export default userConnectSlice.reducer;

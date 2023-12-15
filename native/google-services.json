@@ -7,12 +7,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:819196180091:android:09eb285e3097800a9bd4de",
+        "mobilesdk_app_id": "1:819196180091:android:dc72e7644155e8e09bd4de",
         "android_client_info": {
           "package_name": "com.dinhmencc.soundcloud"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "819196180091-b9ub2jfmfq1bla9m6bf7rh26thom9ja8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dinhmencc.soundcloud",
+            "certificate_hash": "7eee998ed9c66912b983686ce7868d433785ded3"
+          }
+        },
+        {
+          "client_id": "819196180091-nv8kgc5bl0qc2418h857no6mm94ug20o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD9VyP2Ne4VDk4APkkOmftYn4T36QUOSKI"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "819196180091-jgdcgv3bbq84miomu8ijlng3vspnc536.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

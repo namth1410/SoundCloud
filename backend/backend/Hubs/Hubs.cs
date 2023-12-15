@@ -40,6 +40,15 @@ namespace backend.Hubs
             }
         }
 
+        public void CancelConnectionReq(string who)
+        {
+
+            foreach (var connectionId in _connections.GetConnections(who))
+            {
+                Clients.Client(connectionId).SendAsync("CancelConnection");
+            }
+        }
+
         public async Task SendConnectionRequest(string fromUserId, string toUserId)
         {
             try

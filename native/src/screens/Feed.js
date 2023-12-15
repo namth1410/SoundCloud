@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Keyboard,
   ToastAndroid,
+  BackHandler
 } from "react-native";
 import {
   HubConnection,
@@ -28,7 +29,7 @@ export const hubConnection = new HubConnectionBuilder()
   .build();
 
 export default function Feed({}) {
-  const { setModeTogether } = useAudio();
+  const { modeTogether, setModeTogether } = useAudio();
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const userInfo = useSelector((state) => state.userInfo);
@@ -36,6 +37,15 @@ export default function Feed({}) {
   const [waitingConnect, setWaitingConnect] = useState(false);
 
   useEffect(() => {
+    const backAction = () => {
+      if (modeTogether) {
+        return true;
+      } else {
+        return false;
+      }
+    };
+    BackHandler.addEventListener('hardwareBackPress', backAction)
+
     hubConnection
       .start()
       .then(() => {
