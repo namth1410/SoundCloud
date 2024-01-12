@@ -16,8 +16,6 @@ namespace backend.Data
         [Required]
         public string NamePlaylist { get; set; }
 
-        [ForeignKey("IdUser")]
-        public Account User { get; set; }
 
         [Required]
         public DateTime CreatedAt { get; set; }

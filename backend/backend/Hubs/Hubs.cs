@@ -53,9 +53,21 @@ namespace backend.Hubs
         {
             try
             {
+                bool hasConnections = false;
+
                 foreach (var connectionId in _connections.GetConnections(toUserId))
                 {
                     await Clients.Client(connectionId).SendAsync("ConnectionRequest", fromUserId);
+                    hasConnections = true;
+                }
+
+                if (!hasConnections)
+                {
+                    // Nếu không có kết nối nào, gửi thông báo về fromUserId
+                    foreach (var connectionId in _connections.GetConnections(fromUserId))
+                    {
+                        await Clients.Client(connectionId).SendAsync("NoConnectionsAvailable", toUserId);
+                    }
                 }
                 return;
                 foreach (var entry in userConnections)
@@ -156,6 +168,33 @@ namespace backend.Hubs
             _connections.Add(name, Context.ConnectionId);
 
             return Clients.Client(Context.ConnectionId).SendAsync("ConnectedToChat", name);
+        }
+
+        public void PlayTrackReq(string who, string track)
+        {
+
+            foreach (var connectionId in _connections.GetConnections(who))
+            {
+                Clients.Client(connectionId).SendAsync("MeetPlayTrack", track);
+            }
+        }
+
+        public void PauseTrackReq(string who)
+        {
+
+            foreach (var connectionId in _connections.GetConnections(who))
+            {
+                Clients.Client(connectionId).SendAsync("MeetPauseTrack");
+            }
+        }
+
+        public void ContinueTrackReq(string who)
+        {
+
+            foreach (var connectionId in _connections.GetConnections(who))
+            {
+                Clients.Client(connectionId).SendAsync("MeetContinueTrack");
+            }
         }
     }
 }

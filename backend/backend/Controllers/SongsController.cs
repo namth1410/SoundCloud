@@ -533,6 +533,7 @@ namespace backend.Controllers
             song.LinkSong = songModel.linkSong;
             song.Access = songModel.access;
             song.Img = songModel.image;
+            song.Time = "10000";
             _context.Songs.Add(song);
             await _context.SaveChangesAsync();
 

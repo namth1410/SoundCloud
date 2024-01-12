@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { PLAY_MODE } from "../redux/configAudioSlice";
 import { addHistoryAsync } from "../redux/historySlice";
 import { updateDataSuggestSongList } from "../redux/suggestSongSlice";
-import { playSong } from "../redux/playSongSlice";
+import { cancelSong, playSong } from "../redux/playSongSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
@@ -23,37 +23,53 @@ import {
   removeQueue,
   updateProgress,
 } from "../redux/storageSlice";
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  LogLevel,
+} from "@microsoft/signalr";
+import { BASE_URL } from "../redux/configAPI";
+import { updateDataPlaylistQueue } from "../redux/dataRoomSlice";
 
-const AudioContext =
-  createContext();
-  //   {
-  //   setModeTogether: () => {},
-  //   playSound: () => {},
-  //   pauseSound: () => {},
-  //   continuePlaySound: () => {},
-  //   cancelSound: () => {},
-  //   setPositionAudio: () => {},
-  //   setLoopAudio: () => {},
-  //   downloadFromUrl: () => {},
-  //   removeSongFromStorage: () => {},
-  //   addSongToNextPlay: () => {},
-  //   playNextTrack: () => {},
-  //   playPreTrack: () => {},
-  //   playRandomTrackList: () => {},
-  //   playTrackList: () => {},
-  // }
+const AudioContext = createContext();
+
+export const hubConnection = new HubConnectionBuilder()
+  .withUrl(`${BASE_URL}/hubs`)
+  .configureLogging(LogLevel.Information)
+  .build();
 
 export const useAudio = () => {
   return useContext(AudioContext);
 };
 
 export const AudioProvider = ({ children }) => {
+  const contextValue = {
+    duration: duration,
+    curTime: curTime,
+    playing: playing,
+    modeTogether: modeTogether,
+    setModeTogether: setModeTogether,
+    playSound: playSound,
+    pauseSound: pauseSound,
+    continuePlaySound: continuePlaySound,
+    cancelSound: cancelSound,
+    setPositionAudio: setPositionAudio,
+    downloadFromUrl: downloadFromUrl,
+    removeSongFromStorage: removeSongFromStorage,
+    addSongToNextPlay: addSongToNextPlay,
+    playNextTrack: playNextTrack,
+    playPreTrack: playPreTrack,
+    playRandomTrackList: playRandomTrackList,
+    playTrackList: playTrackList,
+  };
   const [audio, setAudio] = useState(new Audio.Sound());
   const configAudio = useSelector((state) => state.configAudio);
   const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
   const historyRedux = useSelector((state) => state.historyRedux);
   const userInfoRedux = useSelector((state) => state.userInfo);
   const storageRedux = useSelector((state) => state.storageRedux);
+  const dataRoomRedux = useSelector((state) => state.dataRoomRedux);
+  const userConnectRedux = useSelector((state) => state.userConnectRedux);
   const allSong = useSelector((state) => state.allSong);
   const playSongStore = useSelector((state) => state.playSongRedux);
   const dispatch = useDispatch();
@@ -61,26 +77,6 @@ export const AudioProvider = ({ children }) => {
   const [curTime, setCurTime] = useState();
   const [playing, setPlaying] = useState(false);
   const [modeTogether, setModeTogether] = useState(false);
-
-  const contextValue = {
-    duration,
-    curTime,
-    playing,
-    modeTogether,
-    setModeTogether,
-    playSound,
-    pauseSound,
-    continuePlaySound,
-    cancelSound,
-    setPositionAudio,
-    downloadFromUrl,
-    removeSongFromStorage,
-    addSongToNextPlay,
-    playNextTrack,
-    playPreTrack,
-    playRandomTrackList,
-    playTrackList,
-  };
 
   useEffect(() => {
     const pre = async () => {
@@ -109,31 +105,48 @@ export const AudioProvider = ({ children }) => {
   }, [configAudio.playMode]);
 
   useEffect(() => {
-    let newSuggestSongList = [...suggestSongRedux.suggestSongList];
+    if (modeTogether === false) {
+      let newSuggestSongList = [...suggestSongRedux.suggestSongList];
 
-    if (suggestSongRedux.suggestSongList.length !== 12) {
-      const allSongs = allSong.songs;
-      while (newSuggestSongList.length < 12) {
-        const randomIndex = Math.floor(Math.random() * allSongs.length);
-        const randomSong = allSongs[randomIndex];
+      if (suggestSongRedux.suggestSongList.length !== 12) {
+        const allSongs = allSong.songs;
+        while (newSuggestSongList.length < 12) {
+          const randomIndex = Math.floor(Math.random() * allSongs.length);
+          const randomSong = allSongs[randomIndex];
 
-        if (
-          !newSuggestSongList.some(
-            (song) =>
-              song.id === randomSong.id ||
-              randomSong.id === playSongStore.infoSong.id
-          )
-        ) {
-          newSuggestSongList.push(randomSong);
+          if (
+            !newSuggestSongList.some(
+              (song) =>
+                song.id === randomSong.id ||
+                randomSong.id === playSongStore.infoSong.id
+            )
+          ) {
+            newSuggestSongList.push(randomSong);
+          }
         }
-      }
 
-      dispatch(updateDataSuggestSongList(newSuggestSongList));
+        dispatch(updateDataSuggestSongList(newSuggestSongList));
+      }
+    } else {
     }
   }, [playSongStore]);
 
-  const playSound = async (item, recordHistory = true) => {
+  const playSound = async (
+    item,
+    recordHistory = true,
+    meetPlayTrack = false
+  ) => {
     try {
+      console.log(modeTogether);
+      console.log("dap ung: ");
+      console.log(meetPlayTrack);
+      if (modeTogether && !meetPlayTrack) {
+        hubConnection.invoke(
+          "PlayTrackReq",
+          userConnectRedux.userConnect.user.username,
+          JSON.stringify(item)
+        );
+      }
       dispatch(playSong(item));
 
       let checkLoading = await audio.getStatusAsync();
@@ -196,28 +209,41 @@ export const AudioProvider = ({ children }) => {
         });
       };
 
-      // setupPlaybackStatusListener();
+      setupPlaybackStatusListener();
       await AsyncStorage.setItem("playSongLasted", JSON.stringify(item));
     } catch (error) {
       console.error("Lỗi khi tải âm thanh provider:", error);
     }
   };
 
-  const pauseSound = async () => {
+  const pauseSound = async (meetPauseTrack = false) => {
+    if (modeTogether && !meetPauseTrack) {
+      hubConnection.invoke(
+        "PauseTrackReq",
+        userConnectRedux.userConnect.user.username
+      );
+    }
     setPlaying(false);
     audio.pauseAsync();
   };
 
-  const continuePlaySound = async (source) => {
+  const continuePlaySound = async (meetContinueTrack) => {
+    if (modeTogether && !meetContinueTrack) {
+      hubConnection.invoke(
+        "ContinueTrackReq",
+        userConnectRedux.userConnect.user.username
+      );
+    }
     setPlaying(true);
     audio.playAsync();
   };
 
   const cancelSound = async () => {
     try {
+      dispatch(cancelSong());
       await audio.unloadAsync();
     } catch (error) {
-      console.error("Lỗi khi dừng âm thanh:", error);
+      console.error("Lỗi khi gỡ âm thanh:", error);
     }
   };
 
@@ -316,8 +342,48 @@ export const AudioProvider = ({ children }) => {
   };
 
   const addSongToNextPlay = async (song) => {
-    if (suggestSongRedux.suggestSongList.length === 0) {
-      playSound(song);
+    if (modeTogether === false) {
+      let newSuggestSongList = [...suggestSongRedux.suggestSongList];
+      if (
+        suggestSongRedux.suggestSongList.length === 0 &&
+        Object.keys(playSongStore.infoSong).length === 0
+      ) {
+        playSound(song);
+      } else {
+        const existingSongIndex = suggestSongRedux.suggestSongList.findIndex(
+          (item) => item.id === song.id
+        );
+        if (existingSongIndex !== -1) {
+          newSuggestSongList = suggestSongRedux.suggestSongList.filter(
+            (song, index) => index !== existingSongIndex
+          );
+        }
+        newSuggestSongList = [song, ...newSuggestSongList];
+        dispatch(updateDataSuggestSongList(newSuggestSongList));
+      }
+    } else {
+      if (dataRoomRedux.playlistQueue.length === 0) {
+        playSound(song);
+      }
+
+      let newPlaylistQueue = [...dataRoomRedux.playlistQueue];
+      if (
+        dataRoomRedux.playlistQueue.length === 0 &&
+        Object.keys(playSongStore.infoSong).length === 0
+      ) {
+        playSound(song);
+      } else {
+        const existingSongIndex = dataRoomRedux.playlistQueue.findIndex(
+          (item) => item.id === song.id
+        );
+        if (existingSongIndex !== -1) {
+          newPlaylistQueue = dataRoomRedux.playlistQueue.filter(
+            (song, index) => index !== existingSongIndex
+          );
+        }
+        newPlaylistQueue = [song, ...newPlaylistQueue];
+        dispatch(updateDataPlaylistQueue(newPlaylistQueue));
+      }
     }
   };
 
@@ -366,7 +432,27 @@ export const AudioProvider = ({ children }) => {
   };
 
   return (
-    <AudioContext.Provider value={contextValue}>
+    <AudioContext.Provider
+      value={{
+        duration,
+        curTime,
+        playing,
+        modeTogether,
+        setModeTogether,
+        playSound,
+        pauseSound,
+        continuePlaySound,
+        cancelSound,
+        setPositionAudio,
+        downloadFromUrl,
+        removeSongFromStorage,
+        addSongToNextPlay,
+        playNextTrack,
+        playPreTrack,
+        playRandomTrackList,
+        playTrackList,
+      }}
+    >
       {children}
     </AudioContext.Provider>
   );

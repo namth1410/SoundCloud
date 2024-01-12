@@ -37,15 +37,15 @@ export default function ControlSong() {
 
   const spinValue = new Animated.Value(0);
 
-  const spin = () => {
-    spinValue.setValue(spinValue._value % 1);
-    Animated.timing(spinValue, {
-      toValue: 1,
-      duration: 10000,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    }).start(() => spin());
-  };
+  // const spin = () => {
+  //   spinValue.setValue(spinValue._value % 1);
+  //   Animated.timing(spinValue, {
+  //     toValue: 1,
+  //     duration: 10000,
+  //     easing: Easing.linear,
+  //     useNativeDriver: false,
+  //   }).start(() => spin());
+  // };
   const spinAnimation = spinValue.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
@@ -53,7 +53,7 @@ export default function ControlSong() {
 
   useEffect(() => {
     if (playing) {
-      spin();
+      // spin();
     }
   }, [playing]);
   return (
@@ -73,14 +73,14 @@ export default function ControlSong() {
             }}
           ></Animated.Image>
           <View style={styles.infoSongBox}>
-            {/* <Text
+            <Text
               numberOfLines={1}
               ellipsizeMode="tail"
               style={styles.nameSong}
             >
               {playSongStore.infoSong.nameSong}
-            </Text> */}
-            <MarqueeLabel text={playSongStore.infoSong.nameSong} />
+            </Text>
+            {/* <MarqueeLabel text={playSongStore.infoSong.nameSong} /> */}
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   nameSong: {
-    flex: 1,
+    marginTop: 5,
     fontWeight: "bold",
     color: "#fff",
     textAlignVertical: "bottom",

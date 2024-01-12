@@ -25,6 +25,7 @@ function createInfoUser(username, password) {
 export default function SignIn({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [saveAccount, setSaveAccount] = useState(true);
 
   const userInfo = useSelector((state) => state.userInfo);
   const allSong = useSelector((state) => state.allSong);
@@ -33,12 +34,44 @@ export default function SignIn({ navigation }) {
   const handleSignIn = async () => {
     try {
       Keyboard.dismiss();
-      await dispatch(signIn(createInfoUser(username, password)))
-        .then((result) => {
+      await dispatch(signIn(createInfoUser(username, password))).then(
+        (result) => {
           dispatch(getAllSong());
-          AsyncStorage.setItem("loginStatus", JSON.stringify(result.meta));
-        })
+          if (saveAccount) {
+            AsyncStorage.setItem("loginStatus", JSON.stringify(result.meta));
+            const saveUser = async () => {
+              const loggedAccounts = await AsyncStorage.getItem(
+                "loggedAccounts"
+              );
+              const existingAccountList = loggedAccounts
+                ? JSON.parse(loggedAccounts)
+                : [];
+              const newAccount = JSON.stringify(result.meta.arg);
 
+              const existingIndex = existingAccountList.findIndex(
+                (ac) => ac.username === newAccount.username
+              );
+
+
+              if (existingIndex !== -1) {
+                existingAccountList.splice(existingIndex, 1);
+                existingAccountList.unshift(newAccount);
+              } else {
+                existingAccountList.unshift(newAccount);
+              }
+              await AsyncStorage.setItem(
+                "loggedAccounts",
+                JSON.stringify(existingAccountList)
+              );
+            };
+            saveUser();
+          }
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          });
+        }
+      );
     } catch (error) {
       console.log(error);
     }
@@ -56,10 +89,6 @@ export default function SignIn({ navigation }) {
     navigation.navigate("Main");
   };
 
-  useEffect(() => {
-
-  }, []);
-
   // useEffect(() => {
   //   if (userInfo.username) {
   //     navigation.reset({
@@ -70,12 +99,12 @@ export default function SignIn({ navigation }) {
   // }, [userInfo]);
 
   useEffect(() => {
-    if (allSong.songs.length > 0) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Main" }],
-      });
-    }
+    // if (allSong.songs.length > 0) {
+    // navigation.reset({
+    //   index: 0,
+    //   routes: [{ name: "Main" }],
+    // });
+    // }
   }, [allSong]);
 
   return (
@@ -86,8 +115,45 @@ export default function SignIn({ navigation }) {
             onPress={async () => {
               await dispatch(signIn(createInfoUser("string1", "string1"))).then(
                 (result) => {
-                  AsyncStorage.setItem("loginStatus", JSON.stringify(result.meta));
+                  AsyncStorage.setItem(
+                    "loginStatus",
+                    JSON.stringify(result.meta)
+                  );
                   dispatch(getAllSong());
+                  if (saveAccount) {
+                    AsyncStorage.setItem(
+                      "loginStatus",
+                      JSON.stringify(result.meta)
+                    );
+                    const saveUser = async () => {
+                      const loggedAccounts = await AsyncStorage.getItem(
+                        "loggedAccounts"
+                      );
+                      const existingAccountList = loggedAccounts
+                        ? JSON.parse(loggedAccounts)
+                        : [];
+                      const newAccount = JSON.stringify(result.meta.arg);
+                      const existingIndex = existingAccountList.findIndex(
+                        (ac) => ac.username === ac.username
+                      );
+
+                      if (existingIndex !== -1) {
+                        existingAccountList.splice(existingIndex, 1);
+                        existingAccountList.unshift(newAccount);
+                      } else {
+                        existingAccountList.unshift(newAccount);
+                      }
+                      await AsyncStorage.setItem(
+                        "loggedAccounts",
+                        JSON.stringify(existingAccountList)
+                      );
+                    };
+                    saveUser();
+                  }
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "Main" }],
+                  });
                 }
               );
             }}
@@ -122,13 +188,19 @@ export default function SignIn({ navigation }) {
 
           <TouchableOpacity
             style={styles.buttonContainer}
-            onPress={handleSignIn}
+            onPress={() => {
+              handleSignIn();
+            }}
           >
             <Text style={styles.buttonText}>Đăng nhập</Text>
           </TouchableOpacity>
 
           <View style={styles.optionsContainer}>
-            <TouchableOpacity onPress={handleSignInWithoutAccount}>
+            <TouchableOpacity
+              onPress={() => {
+                handleSignInWithoutAccount();
+              }}
+            >
               <Text style={styles.option}>Sử dụng mà không cần đăng nhập</Text>
             </TouchableOpacity>
             <Text>hoặc</Text>
