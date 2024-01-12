@@ -1,43 +1,44 @@
-import React, { useEffect, useState, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  SafeAreaView,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
-  Image,
-  FlatList,
-  ScrollView,
-  BackHandler,
   Alert,
+  BackHandler,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
   ToastAndroid,
+  TouchableOpacity,
+  View
 } from "react-native";
-import {
-  HubConnection,
-  HubConnectionBuilder,
-  LogLevel,
-} from "@microsoft/signalr";
-import { BASE_URL } from "../redux/configAPI";
+
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Tab, TabView } from "@rneui/themed";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { hubConnection } from "./Feed";
-import { useRoute } from "@react-navigation/native";
-import { useAudio } from "../common/AudioProvider";
-import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
+import { hubConnection, useAudio } from "../common/AudioProvider";
 import { clearDataRoom } from "../redux/dataRoomSlice";
 import { clearUserConnect } from "../redux/userConnectSlice";
 
 export default function RoomTogether({}) {
   const route = useRoute();
   const usernameFriend = route.params ? route.params.data : null;
-  const { modeTogether, setModeTogether } = useAudio();
+  const {
+    modeTogether,
+    setModeTogether,
+    playSound,
+    pauseSound,
+    continuePlaySound,
+  } = useAudio();
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
   const scrollViewRef = useRef(null);
   const userInfo = useSelector((state) => state.userInfo);
   const userConnectRedux = useSelector((state) => state.userConnectRedux);
+  const dataRoomRedux = useSelector((state) => state.dataRoomRedux);
 
   const [messageStorage, setMessageStorage] = useState([]);
   const [indexTab, setIndexTab] = useState(0);
@@ -133,13 +134,57 @@ export default function RoomTogether({}) {
       exitRoom();
     });
 
-    console.log(userConnectRedux.userConnect);
+    hubConnection.on("MeetPlayTrack", (track) => {
+      console.log(JSON.parse(track));
+      playSound(
+        JSON.parse(track),
+        (recordHistory = true),
+        (meetPlayTrack = true)
+      );
+    });
+
+    hubConnection.on("MeetPauseTrack", () => {
+      pauseSound((meetPauseTrack = true));
+    });
+
+    hubConnection.on("MeetContinueTrack", () => {
+      continuePlaySound((meetContinueTrack = true));
+    });
+
+    const saveUser = async () => {
+      const userListConnected = await AsyncStorage.getItem("userListConnected");
+      const existingUserList = userListConnected
+        ? JSON.parse(userListConnected)
+        : [];
+      const newUser = userConnectRedux.userConnect.user;
+
+      const existingIndex = existingUserList.findIndex(
+        (user) => user.username === newUser.username
+      );
+
+      if (existingIndex !== -1) {
+        existingUserList.splice(existingIndex, 1);
+        existingUserList.unshift(newUser);
+      } else {
+        existingUserList.unshift(newUser);
+      }
+
+
+      await AsyncStorage.setItem(
+        "userListConnected",
+        JSON.stringify(existingUserList)
+      );
+    };
+    saveUser();
+
     return () => backHandler.remove();
   }, []);
 
   useEffect(() => {
     // console.log(messageStorage);
   }, [messageStorage]);
+
+  useEffect(() => {}, [dataRoomRedux]);
 
   return (
     <SafeAreaView style={{ height: "100%" }}>
@@ -182,7 +227,6 @@ export default function RoomTogether({}) {
             value={indexTab}
             onChange={setIndexTab}
           >
-            <Tab.Item>Tìm kiếm</Tab.Item>
             <Tab.Item>Track</Tab.Item>
             <Tab.Item>Nhắn tin</Tab.Item>
           </Tab>
@@ -191,9 +235,7 @@ export default function RoomTogether({}) {
             onChange={setIndexTab}
             animationType="spring"
           >
-            <TabView.Item style={{ width: "100%" }}>
-              <View style={{ flex: 1 }}></View>
-            </TabView.Item>
+
             <TabView.Item style={{ backgroundColor: "#ccc", width: "100%" }}>
               <View style={{ flex: 1 }}></View>
             </TabView.Item>
@@ -281,15 +323,18 @@ export default function RoomTogether({}) {
                   })}
                 </ScrollView>
 
-                <View
+                <KeyboardAwareScrollView
+                  keyboardShouldPersistTaps="always"
                   style={{
                     width: "100%",
                     borderWidth: 1,
                     backgroundColor: "#303030",
-                    flexDirection: "row",
-                    alignItems: "center",
                     position: "absolute",
                     bottom: 0,
+                  }}
+                  contentContainerStyle={{
+                    alignItems: "center",
+                    flexDirection: "row",
                     height: 50,
                   }}
                 >
@@ -308,13 +353,14 @@ export default function RoomTogether({}) {
                     }}
                   ></TextInput>
                   <TouchableOpacity
+                    style={{ padding: 10, zIndex: 10 }}
                     onPressOut={() => {
                       sendMessage();
                     }}
                   >
                     <Ionicons name="send" color="#F57C1F" size={30} />
                   </TouchableOpacity>
-                </View>
+                </KeyboardAwareScrollView>
               </View>
             </TabView.Item>
           </TabView>

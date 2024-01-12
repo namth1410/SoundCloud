@@ -31,6 +31,7 @@ import AudioCloud from "./src/screens/AudioCloud";
 import SearchDetail from "./src/screens/SearchDetail";
 import RoomTogether from "./src/screens/RoomTogether";
 import Splash from "./src/screens/Splash";
+import SongLike from "./src/screens/SongLike";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -52,6 +53,7 @@ function UserCombine() {
       <Stack.Screen name="UploadFromUser" component={UploadFromUser} />
       <Stack.Screen name="History" component={History} />
       <Stack.Screen name="ManageStorage" component={ManageStorage} />
+      <Stack.Screen name="SongLike" component={SongLike} />
       <Stack.Screen name="Playlist" component={Playlist} />
       <Stack.Screen name="Author" component={Author} />
       <Stack.Screen name="SongAuthor" component={SongAuthor} />

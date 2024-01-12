@@ -155,8 +155,6 @@ export default function CardTrackSearch({ props }) {
     setTimeRelease(convertTimeToString(props.createdAt));
     setViews(convertNumberToString(props.views));
     setLikes(convertNumberToString(props.likes));
-
-    console.log(props);
   }, []);
 
   const opacity = value;

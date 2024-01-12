@@ -107,9 +107,7 @@ export default function CardPlaylist({ props }) {
                   fontSize: 12,
                 }}
               >
-                {authorInfoRedux.nameAuthor !== ""
-                  ? authorInfoRedux.nameAuthor
-                  : userInfoRedux.name}
+                {userInfoRedux.name}
               </Text>
               <Icon
                 style={{ marginHorizontal: 5 }}

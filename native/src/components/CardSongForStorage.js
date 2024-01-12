@@ -35,7 +35,7 @@ export default function CardSongForStorage({ props }) {
   const { id, img, nameAuthor } = props;
   const { width, height } = Dimensions.get("screen");
   const navigation = useNavigation();
-  const { playSound, removeSongFromStorage } = useAudio();
+  const { playSound, removeSongFromStorage, addSongToNextPlay } = useAudio();
   const songLikeRedux = useSelector((state) => state.songLikeRedux);
   const userInfoRedux = useSelector((state) => state.userInfo);
   const suggestSongRedux = useSelector((state) => state.suggestSongRedux);
@@ -94,7 +94,7 @@ export default function CardSongForStorage({ props }) {
               borderRadius: 5,
               zIndex: 2,
             }}
-            src={
+            source={
               img === null || img === "" || img === "null"
                 ? require("../../assets/unknow.jpg")
                 : { uri: img }
@@ -112,7 +112,7 @@ export default function CardSongForStorage({ props }) {
               top: 10,
               left: 5,
             }}
-            src={
+            source={
               img === null || img === "" || img === "null"
                 ? require("../../assets/unknow.jpg")
                 : { uri: img }
@@ -276,29 +276,8 @@ export default function CardSongForStorage({ props }) {
     }
   };
 
-  const play = () => {
-    playSound(props);
-  };
-
   const addSongToQueue = () => {
-    let newSuggestSongList = [...suggestSongRedux.suggestSongList];
-    if (
-      suggestSongRedux.suggestSongList.length === 0 &&
-      Object.keys(playSongStore.infoSong).length === 0
-    ) {
-      play();
-    } else {
-      const existingSongIndex = suggestSongRedux.suggestSongList.findIndex(
-        (song) => song.id === props.id
-      );
-      if (existingSongIndex !== -1) {
-        newSuggestSongList = suggestSongRedux.suggestSongList.filter(
-          (song, index) => index !== existingSongIndex
-        );
-      }
-      newSuggestSongList = [props, ...newSuggestSongList];
-      dispatch(updateDataSuggestSongList(newSuggestSongList));
-    }
+    addSongToNextPlay(props);
     setModalVisible(false);
   };
 
@@ -329,7 +308,7 @@ export default function CardSongForStorage({ props }) {
         <TouchableOpacity
           style={{ flexDirection: "row" }}
           onPressOut={() => {
-            play();
+            playSound(props);
           }}
         >
           <Image

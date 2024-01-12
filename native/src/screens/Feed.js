@@ -10,18 +10,25 @@ import {
   StyleSheet,
   Keyboard,
   ToastAndroid,
-  BackHandler
+  BackHandler,
+  Image,
+  FlatList,
+  Dimensions,
 } from "react-native";
 import {
   HubConnection,
   HubConnectionBuilder,
   LogLevel,
 } from "@microsoft/signalr";
+import Ionicons from "react-native-vector-icons/Ionicons";
+
 import { BASE_URL } from "../redux/configAPI";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { getUserByUsername } from "../redux/userConnectSlice";
 import { useAudio } from "../common/AudioProvider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getInfoAuthor } from "../redux/authorSlice";
 
 export const hubConnection = new HubConnectionBuilder()
   .withUrl(`${BASE_URL}/hubs`)
@@ -29,12 +36,119 @@ export const hubConnection = new HubConnectionBuilder()
   .build();
 
 export default function Feed({}) {
-  const { modeTogether, setModeTogether } = useAudio();
+  const { width } = Dimensions.get("window");
+
+  const { modeTogether, setModeTogether, cancelSound } = useAudio();
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const userInfo = useSelector((state) => state.userInfo);
   const [idConnect, setIdConnect] = useState();
   const [waitingConnect, setWaitingConnect] = useState(false);
+  const [userListConnected, setUserListConnected] = useState([]);
+
+  const renderItemAuthor = ({ item }) => {
+    return (
+      <TouchableOpacity
+        delayPressIn={1000}
+        onPressOut={() => {
+          // dispatch(
+          //   getInfoAuthor({
+          //     idUser: item.id,
+          //   })
+          // );
+          // navigation.navigate("Author");
+        }}
+        style={{
+          flexDirection: "row",
+          paddingHorizontal: 10,
+          marginVertical: 15,
+          alignItems: "center",
+          height: "auto",
+          width: width,
+        }}
+      >
+        <Image
+          style={{
+            resizeMode: "contain",
+            width: 100,
+            height: 100,
+            borderRadius: 1000,
+          }}
+          source={
+            item.avatar
+              ? { uri: item.avatar }
+              : require("../../assets/anonymous.jpg")
+          }
+        />
+        <View
+          style={{
+            flexDirection: "column",
+            height: 100,
+            flex: 1,
+            justifyContent: "space-around",
+          }}
+        >
+          <Text
+            style={{
+              fontWeight: "bold",
+              color: "white",
+              marginLeft: 10,
+              fontSize: 16,
+            }}
+          >
+            {item.name}
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              marginLeft: 10,
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name="location-outline" color="#A3A1A2" size={16} />
+
+            <Text style={{ color: "#A3A1A2", fontSize: 12, marginLeft: 5 }}>
+              Ha Noi
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              marginLeft: 10,
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name="musical-notes-outline" color="#A3A1A2" size={16} />
+
+            <Text style={{ color: "#A3A1A2", fontSize: 12, marginLeft: 5 }}>
+              {`${item.trackCount} Tracks`}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{}}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              paddingRight: 10,
+            }}
+            onPress={() => {
+              setIdConnect(item.username);
+              hubConnection.invoke(
+                "SendConnectionRequest",
+                userInfo.username,
+                item.username
+              );
+              setWaitingConnect(true);
+            }}
+          >
+            <Ionicons name="hand-right-outline" color="#F57C1F" size={30} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   useEffect(() => {
     const backAction = () => {
@@ -44,11 +158,12 @@ export default function Feed({}) {
         return false;
       }
     };
-    BackHandler.addEventListener('hardwareBackPress', backAction)
+    BackHandler.addEventListener("hardwareBackPress", backAction);
 
     hubConnection
       .start()
       .then(() => {
+        console.log("connect success");
         hubConnection.invoke("OnConnected", userInfo.username);
         // hubConnection.invoke("ConnectToChat", userInfo.username);
       })
@@ -57,18 +172,12 @@ export default function Feed({}) {
       });
 
     hubConnection.on("ConnectedToChat", (message) => {
-      console.log(message); // In ra thông báo kết nối thành công
-      hubConnection.invoke(
-        "SendConnectionRequest",
-        userInfo.username,
-        "userId1"
-      );
+      console.log(message);
     });
 
     hubConnection.on("ConnectionRequest", (fromUserId) => {
       // Hiển thị yêu cầu kết nối và cho phép người dùng đồng ý hoặc từ chối
       // Ví dụ: Hiển thị thông báo hoặc giao diện cho phép người dùng xác nhận
-      console.log("aa");
       Alert.alert("Yêu cầu kết nối ", `Chấp nhận kết nối với ${fromUserId}?`, [
         {
           text: "Hủy",
@@ -104,6 +213,14 @@ export default function Feed({}) {
       // }
     });
 
+    hubConnection.on("NoConnectionsAvailable", (toUserId) => {
+      ToastAndroid.show(
+        `Hiện không thể kết nối với ${toUserId}`,
+        ToastAndroid.SHORT
+      );
+      setWaitingConnect(false);
+    });
+
     hubConnection.on("ConnectionRefused", (fromUserId) => {
       ToastAndroid.show(`${fromUserId} từ chối kết nối`, ToastAndroid.SHORT);
       setWaitingConnect(false);
@@ -112,6 +229,7 @@ export default function Feed({}) {
     hubConnection.on("ConnectionAccepted", async (toUserId) => {
       setWaitingConnect(false);
       setModeTogether(true);
+      cancelSound();
       await dispatch(
         getUserByUsername({
           username: toUserId,
@@ -119,11 +237,21 @@ export default function Feed({}) {
       ).then(() => {
         navigation.navigate("RoomTogether", { data: toUserId });
       });
-
-      // Xử lý việc kết nối đã được chấp nhận
-      // Ví dụ: Hiển thị thông báo hoặc giao diện cho phép người dùng bắt đầu trò chuyện
     });
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const updateDataUserListConnected = async () => {
+        const a = JSON.parse(await AsyncStorage.getItem("userListConnected"));
+        setUserListConnected(a);
+      };
+      updateDataUserListConnected();
+      return () => {
+        // console.log("ScreenA unfocused");
+      };
+    }, [])
+  );
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View
@@ -174,6 +302,32 @@ export default function Feed({}) {
             Connect
           </Text>
         </TouchableOpacity>
+
+        {userListConnected ? (
+          <View>
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                marginLeft: 20,
+                marginTop: 25,
+                fontWeight: "bold",
+              }}
+            >
+              Kết nối gần đây
+            </Text>
+            <FlatList
+              data={userListConnected}
+              keyExtractor={(item) => item.username}
+              renderItem={renderItemAuthor}
+              extraData={userListConnected}
+              style={{ paddingHorizontal: 0 }}
+              initialNumToRender={3}
+            />
+          </View>
+        ) : (
+          <></>
+        )}
 
         {waitingConnect ? (
           <View

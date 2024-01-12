@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import React, { useEffect } from "react";
 import {
   ScrollView,
@@ -15,10 +15,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { getSongsFromPlaylist } from "../redux/playlistDetailSlice";
 
 import { postSongFromUserAsync } from "../redux/audioCloudSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function User({}) {
   const userInfoRedux = useSelector((state) => state.userInfo);
   const allSongRedux = useSelector((state) => state.allSong);
   const playlistRedux = useSelector((state) => state.playlistRedux);
+  const storageRedux = useSelector((state) => state.storageRedux);
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -193,6 +196,40 @@ export default function User({}) {
     );
   };
 
+  const switchAccount = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          { name: "SignIn" }, // Tên của màn hình SignIn
+        ],
+      })
+    );
+  };
+
+  const logOut = () => {
+    const _loginStatus = AsyncStorage.removeItem("loginStatus");
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          { name: "SignIn" }, // Tên của màn hình SignIn
+        ],
+      })
+    );
+  };
+
+  useEffect(() => {
+    const a = async () => {
+      const _loginStatus = await AsyncStorage.getItem("loggedAccounts");
+      const loginStatus = JSON.parse(_loginStatus);
+      console.log(loginStatus);
+    };
+
+    a();
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View
@@ -307,6 +344,10 @@ export default function User({}) {
                   alignItems: "center",
                   marginRight: 10,
                 }}
+                delayPressIn={1000}
+                onPressOut={() => {
+                  switchAccount();
+                }}
               >
                 <Ionicons name="people-outline" size={14} color="white" />
                 <Text
@@ -347,6 +388,10 @@ export default function User({}) {
               </TouchableOpacity>
 
               <TouchableOpacity
+                onPressOut={() => {
+                  logOut();
+                }}
+                delayPressIn={1000}
                 style={{
                   flexDirection: "row",
                   backgroundColor: "#272727",
@@ -366,7 +411,7 @@ export default function User({}) {
                     marginLeft: 5,
                   }}
                 >
-                  Chế độ không đăng nhập
+                  Đăng xuất
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -439,6 +484,9 @@ export default function User({}) {
             <TouchableOpacity
               delayPressIn={1000}
               style={{ flexDirection: "row", marginTop: 15 }}
+              onPressOut={() => {
+                navigation.navigate("SongLike");
+              }}
             >
               <Ionicons name="heart-outline" color="#F57C1F" size={30} />
               <Text style={{ color: "white", marginLeft: 20, fontSize: 16 }}>
@@ -476,7 +524,7 @@ export default function User({}) {
                 <Text
                   style={{ color: "#ABABAB", marginLeft: 20, fontSize: 14 }}
                 >
-                  10 Tracks
+                  {`${storageRedux.storage.length} Tracks`}
                 </Text>
               </View>
             </TouchableOpacity>

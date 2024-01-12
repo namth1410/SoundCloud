@@ -205,7 +205,7 @@ export default function Search({}) {
             <Ionicons name="musical-notes-outline" color="#A3A1A2" size={16} />
 
             <Text style={{ color: "#A3A1A2", fontSize: 14, marginLeft: 5 }}>
-              {`${item.trackCount} Tracks`}
+              {`${item.numberTrack} Tracks`}
             </Text>
           </View>
         </View>
@@ -251,6 +251,7 @@ export default function Search({}) {
     setDataAuthors(searchRedux.authorsResult);
     setDataSongs(searchRedux.songsResult);
     setDataPlaylists(searchRedux.playlistsResult);
+    console.log(searchRedux.authorsResult);
   }, [searchRedux]);
 
   useEffect(() => {

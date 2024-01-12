@@ -25,6 +25,13 @@ export const dataRoomSlice = createSlice({
         success: false,
       };
     },
+
+    updateDataPlaylistQueue: (state, action) => {
+      return {
+        ...state,
+        playlistQueue: [...action.payload],
+      };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -71,6 +78,6 @@ export const getUserByUsername = createAsyncThunk(
   }
 );
 
-export const { clearDataRoom } = dataRoomSlice.actions;
+export const { clearDataRoom, updateDataPlaylistQueue } = dataRoomSlice.actions;
 
 export default dataRoomSlice.reducer;

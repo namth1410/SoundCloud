@@ -160,10 +160,10 @@ export default function ModalSongV3({ navigation }) {
         } else if (result.type.includes("fulfilled")) {
           dispatch(getPlaylists({ token: userInfo.token }));
           // setModalEditPlaylistVisible(false);
-          ToastAndroid.show(
-            `Đã thêm vào playlist ${item.namePlaylist}`,
-            ToastAndroid.SHORT
-          );
+          // ToastAndroid.show(
+          //   `Đã thêm vào playlist ${item.namePlaylist}`,
+          //   ToastAndroid.SHORT
+          // );
         }
       });
     }
@@ -776,7 +776,7 @@ export default function ModalSongV3({ navigation }) {
               style={{
                 backgroundColor: "black",
                 width: "100%",
-                height: 0.5 * height,
+                height: 0.6 * height,
                 top: 0,
                 left: 0,
                 opacity: 0,
@@ -788,8 +788,8 @@ export default function ModalSongV3({ navigation }) {
             style={{
               backgroundColor: "rgb(15,15,15)",
               width: "100%",
-              height: 0.5 * height,
-              top: 0.5 * height + 20,
+              height: 0.4 * height,
+              top: 0.6 * height + 20,
               left: 0,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
@@ -987,27 +987,7 @@ export default function ModalSongV3({ navigation }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => {}}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 10,
-                  }}
-                >
-                  <Ionicons color="red" name="trash-outline" size={30} />
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      color: "red",
-                      marginLeft: 15,
-                    }}
-                  >
-                    Xóa playlist
-                  </Text>
-                </View>
-              </TouchableOpacity>
+
             </View>
           </View>
         </View>
@@ -1107,6 +1087,14 @@ export default function ModalSongV3({ navigation }) {
                   }}
                   placeholder="Tìm kiếm..."
                   placeholderTextColor="white"
+                  onChangeText={(value) => {
+                    console.log(playlistRedux.playlistList);
+                    setData(
+                      playlistRedux.playlistList.filter((i) =>
+                        i.namePlaylist.includes(value)
+                      )
+                    );
+                  }}
                 />
               </View>
 

@@ -44,6 +44,7 @@ export default function PlaylistDetail({ route }) {
   const [filterSongs, setFilterSongs] = useState("new");
   const textInputRef = useRef(null);
   const [textInputValue, setTextInputValue] = useState("");
+  let _namePlaylist = "";
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [isPublic, setIsPublic] = useState(false);
@@ -94,7 +95,7 @@ export default function PlaylistDetail({ route }) {
       putPlaylistAsync({
         idPlaylist: playlistDetailRedux.idPlaylist,
         access: isPublic ? "public" : "private",
-        namePlaylist: textInputValue,
+        namePlaylist: _namePlaylist,
         token: userInfo.token,
       })
     ).then((result) => {
@@ -191,7 +192,7 @@ export default function PlaylistDetail({ route }) {
             blurRadius={4}
             source={
               data.length === 0 || data[0].img === "" || data[0].img === "null"
-                ? require("../../assets/gai.jpg")
+                ? require("../../assets/unknow.jpg")
                 : { uri: data[0].img }
             }
           />
@@ -218,7 +219,7 @@ export default function PlaylistDetail({ route }) {
             }}
             source={
               data.length === 0 || data[0].img === "" || data[0].img === "null"
-                ? require("../../assets/gai.jpg")
+                ? require("../../assets/unknow.jpg")
                 : { uri: data[0].img }
             }
           />
@@ -500,7 +501,7 @@ export default function PlaylistDetail({ route }) {
                     data.length === 0 ||
                     data[0].img === "" ||
                     data[0].img === "null"
-                      ? require("../../assets/gai.jpg")
+                      ? require("../../assets/unknow.jpg")
                       : { uri: data[0].img }
                   }
                 />
@@ -708,7 +709,8 @@ export default function PlaylistDetail({ route }) {
                       placeholderTextColor="white"
                       spellCheck={false}
                       onChangeText={(value) => {
-                        setTextInputValue(value);
+                        // setTextInputValue(value);
+                        _namePlaylist = value;
                       }}
                     />
                   </View>
